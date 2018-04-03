@@ -1,0 +1,1 @@
+[{"constant":true,"inputs":[{"name":"ints","type":"uint256[5]"}],"name":"staticUint","outputs":[{"name":"","type":"uint256[5]"}],"payable":false,"stateMutability":"pure","type":"function"},{"constant":true,"inputs":[{"name":"ints","type":"uint256[]"}],"name":"dynamicUint","outputs":[{"name":"","type":"uint256[]"}],"payable":false,"stateMutability":"pure","type":"function"}]
