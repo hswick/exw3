@@ -4,7 +4,7 @@ defmodule EXW3 do
     use Agent
     
     def at(abi, address) do
-      { _, pid } = Agent.start_link(fn -> %{abi: abi, address: address} end)
+      { :ok, pid } = Agent.start_link(fn -> %{abi: abi, address: address} end)
       pid
     end
 
@@ -20,26 +20,28 @@ defmodule EXW3 do
     end
 
     def deploy(bin_filename, options) do
-      {_, bin} = File.read(Path.join(System.cwd(), bin_filename))
+      { :ok, bin} = File.read(Path.join(System.cwd(), bin_filename))
       tx = %{
         from: options[:from],
         data: bin,
         gas: options[:gas]
       }
-      {_, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
-      {_, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_receipt_id)
+      { :ok, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
+      { :ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_receipt_id)
 
       tx_receipt["contractAddress"]
     end
 
     def method(contract_agent, name) do
-      tx = %{
-        to: get(contract_agent, :address),
-        data: EXW3.encode(get(contract_agent, :abi), name, [])
-      }
-
-      {_, result } = Ethereumex.HttpClient.eth_call(tx)
-      result
+      if get(contract_agent, :abi)[name]["constant"] do
+        Ethereumex.HttpClient.eth_call(%{
+          to: get(contract_agent, :address),
+          data: EXW3.encode(get(contract_agent, :abi), name, [])
+        })
+      else
+        
+        "foobar"
+      end
     end
 
   end

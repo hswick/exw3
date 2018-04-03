@@ -14,9 +14,19 @@ defmodule EXW3Test do
   end
 
   test "deploys contract and uses it", context do
-    contract_address = EXW3.Contract.deploy("test/examples/build/SimpleStorage.bin", %{from: Enum.at(context[:accounts], 0), gas: 150000})
+    contract_address = EXW3.Contract.deploy(
+      "test/examples/build/SimpleStorage.bin", 
+      %{
+          from: Enum.at(context[:accounts], 0), 
+          gas: 150000
+      }
+    )
 
     contract_agent = EXW3.Contract.at context[:simple_storage_abi], contract_address
+
+    EXW3.Contract.get contract_agent, :abi
+    |> Kernel.inspect
+    |> IO.puts 
 
     EXW3.Contract.method(contract_agent, "get")
     |> Kernel.inspect
