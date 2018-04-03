@@ -1,20 +1,47 @@
 defmodule EXW3 do
 
-  @moduledoc """
-  Documentation for EXW3.
-  """
+  defmodule Contract do
+    use Agent
+    
+    def at(abi, address) do
+      { _, pid } = Agent.start_link(fn -> %{abi: abi, address: address} end)
+      pid
+    end
 
-  @doc """
-  Hello world.
+    def get(contract, key) do
+      Agent.get(contract, &Map.get(&1, key))
+    end
 
-  ## Examples
+    @doc """
+    Puts the `value` for the given `key` in the `contract`.
+    """
+    def put(contract, key, value) do
+      Agent.update(contract, &Map.put(&1, key, value))
+    end
 
-      iex> EXW3.hello
-      :world
+    def deploy(bin_filename, options) do
+      {_, bin} = File.read(Path.join(System.cwd(), bin_filename))
+      tx = %{
+        from: options[:from],
+        data: bin,
+        gas: options[:gas]
+      }
+      {_, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
+      {_, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_receipt_id)
 
-  """
-  def hello do
-    :world
+      tx_receipt["contractAddress"]
+    end
+
+    def method(contract_agent, name) do
+      tx = %{
+        to: get(contract_agent, :address),
+        data: EXW3.encode(get(contract_agent, :abi), name, [])
+      }
+
+      {_, result } = Ethereumex.HttpClient.eth_call(tx)
+      result
+    end
+
   end
 
   def accounts do
@@ -39,6 +66,6 @@ defmodule EXW3 do
   def encode abi, name, args do
     inputs = Enum.map abi[name]["inputs"], fn x -> x["type"] end
     fn_signature = Enum.join [name, "(", Enum.join(inputs, ","), ")"]
-    ABI.encode(fn_signature, args)
+    ABI.encode(fn_signature, args) |> :binary.decode_unsigned
   end
 end
