@@ -1,4 +1,4 @@
-defmodule EXW3 do
+defmodule ExW3 do
 
   defmodule Contract do
     use Agent
@@ -20,27 +20,30 @@ defmodule EXW3 do
     end
 
     def deploy(bin_filename, options) do
-      { :ok, bin} = File.read(Path.join(System.cwd(), bin_filename))
+      {:ok, bin} = File.read(Path.join(System.cwd(), bin_filename))
       tx = %{
         from: options[:from],
         data: bin,
         gas: options[:gas]
       }
-      { :ok, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
-      { :ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_receipt_id)
+      {:ok, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
+      {:ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_receipt_id)
 
       tx_receipt["contractAddress"]
     end
 
-    def method(contract_agent, name) do
+    def method(contract_agent, name, args \\ [], options \\ %{}) do
       if get(contract_agent, :abi)[name]["constant"] do
-        Ethereumex.HttpClient.eth_call(%{
+        {:ok, output } = Ethereumex.HttpClient.eth_call(%{
           to: get(contract_agent, :address),
-          data: EXW3.encode(get(contract_agent, :abi), name, [])
+          data: ExW3.encode_inputs(get(contract_agent, :abi), name, args)
         })
+        [ :ok ] ++ ExW3.decode_output(get(contract_agent, :abi), name, output) |> List.to_tuple
       else
-        
-        "foobar"
+        Ethereumex.HttpClient.eth_send_transaction(Map.merge(%{
+          to: get(contract_agent, :address),
+          data: ExW3.encode_inputs(get(contract_agent, :abi), name, args)
+        }, options))
       end
     end
 
@@ -65,9 +68,16 @@ defmodule EXW3 do
     end
   end
 
-  def encode abi, name, args do
-    inputs = Enum.map abi[name]["inputs"], fn x -> x["type"] end
-    fn_signature = Enum.join [name, "(", Enum.join(inputs, ","), ")"]
-    ABI.encode(fn_signature, args) |> :binary.decode_unsigned
+  def decode_output abi, name, output do
+    {:ok, trim_output} = String.slice(output, 2..String.length(output)) |> Base.decode16(case: :lower)
+    output_types = Enum.map abi[name]["outputs"], fn x -> x["type"] end
+    output_signature = Enum.join [name, "(", Enum.join(output_types, ")"), ")"]
+    ABI.decode(output_signature, trim_output)
+  end
+
+  def encode_inputs abi, name, inputs do
+    input_types = Enum.map abi[name]["inputs"], fn x -> x["type"] end
+    input_signature = Enum.join [name, "(", Enum.join(input_types, ","), ")"]
+    ABI.encode(input_signature, inputs) |> Hexate.encode
   end
 end

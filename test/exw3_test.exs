@@ -1,11 +1,11 @@
 defmodule EXW3Test do
   use ExUnit.Case
-  doctest EXW3
+  doctest ExW3
 
   setup_all do
     %{
-      simple_storage_abi: EXW3.load_abi("test/examples/build/SimpleStorage.abi"), 
-      accounts: EXW3.accounts
+      simple_storage_abi: ExW3.load_abi("test/examples/build/SimpleStorage.abi"), 
+      accounts: ExW3.accounts
     }
   end
 
@@ -14,27 +14,30 @@ defmodule EXW3Test do
   end
 
   test "deploys contract and uses it", context do
-    contract_address = EXW3.Contract.deploy(
+    contract_address = ExW3.Contract.deploy(
       "test/examples/build/SimpleStorage.bin", 
       %{
-          from: Enum.at(context[:accounts], 0), 
-          gas: 150000
+        from: Enum.at(context[:accounts], 0), 
+        gas: 150000
       }
     )
 
-    contract_agent = EXW3.Contract.at context[:simple_storage_abi], contract_address
+    storage = ExW3.Contract.at context[:simple_storage_abi], contract_address
 
-    EXW3.Contract.get contract_agent, :abi
-    |> Kernel.inspect
-    |> IO.puts 
+    {:ok, result} = ExW3.Contract.method(storage, "get")
 
-    EXW3.Contract.method(contract_agent, "get")
-    |> Kernel.inspect
-    |> IO.puts 
+    assert result == 0
+
+    ExW3.Contract.method(storage, "set", [1], %{from: Enum.at(context[:accounts], 0)})
+
+    {:ok, result} = ExW3.Contract.method(storage, "get")
+
+    assert result == 1
+
   end
 
   test "gets accounts" do
-    assert EXW3.accounts |> is_list
+    assert ExW3.accounts |> is_list
   end
 
 end

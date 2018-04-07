@@ -1,4 +1,4 @@
-defmodule EXW3.Mixfile do
+defmodule ExW3.Mixfile do
   use Mix.Project
 
   def project do
@@ -30,7 +30,8 @@ defmodule EXW3.Mixfile do
     [
       {:ethereumex, "~> 0.3.2"},
       {:abi, "~> 0.1.8"},
-      {:poison, "~> 3.1"}
+      {:poison, "~> 3.1"},
+      {:hexate,  ">= 0.6.0"}
     ]
   end
 end
