@@ -34,9 +34,10 @@ defmodule ExW3 do
 
     def method(contract_agent, name, args \\ [], options \\ %{}) do
       if get(contract_agent, :abi)[name]["constant"] do
+        data = ExW3.encode_inputs(get(contract_agent, :abi), name, args)
         {:ok, output } = Ethereumex.HttpClient.eth_call(%{
           to: get(contract_agent, :address),
-          data: ExW3.encode_inputs(get(contract_agent, :abi), name, args)
+          data: data
         })
         [ :ok ] ++ ExW3.decode_output(get(contract_agent, :abi), name, output) |> List.to_tuple
       else
@@ -47,13 +48,6 @@ defmodule ExW3 do
       end
     end
 
-  end
-
-  def accounts do
-    case Ethereumex.HttpClient.eth_accounts do
-      {:ok, accounts} -> accounts
-      err -> err
-    end
   end
 
   def reformat_abi abi do
@@ -78,6 +72,53 @@ defmodule ExW3 do
   def encode_inputs abi, name, inputs do
     input_types = Enum.map abi[name]["inputs"], fn x -> x["type"] end
     input_signature = Enum.join [name, "(", Enum.join(input_types, ","), ")"]
-    ABI.encode(input_signature, inputs) |> Hexate.encode
+    ABI.encode(input_signature, inputs) |> Base.encode16(case: :lower)
   end
+
+  def accounts do
+    case Ethereumex.HttpClient.eth_accounts do
+      {:ok, accounts} -> accounts
+      err -> err
+    end
+  end
+
+  #Converts ethereum hex string to decimal number
+  defp to_decimal hex_string do
+    hex_string
+    |> String.slice(2..-1)
+    |> String.to_integer(16)
+  end
+
+  def block_number do
+    case Ethereumex.HttpClient.eth_block_number do
+      {:ok, block_number} -> 
+        block_number |> to_decimal
+      err -> err
+    end
+  end
+
+  def balance account do
+    case Ethereumex.HttpClient.eth_get_balance(account) do
+      {:ok, balance} -> 
+        balance |> to_decimal
+      err -> err
+    end
+  end
+
+  defp keys_to_decimal map, keys do
+    Map.new(
+      Enum.map keys, fn k ->
+        { k, Map.get(map, k) |> to_decimal }
+      end
+    )
+  end
+
+  def tx_receipt tx_id do
+    case Ethereumex.HttpClient.eth_get_transaction_receipt(tx_id) do
+      {:ok, receipt} -> 
+        Map.merge receipt, keys_to_decimal(receipt, ["blockNumber", "cumulativeGasUsed", "gasUsed"])
+      err -> err
+    end
+  end
+
 end

@@ -1,6 +1,6 @@
-# EXW3
+# ExW3
 
-**TODO: Add description**
+Ethereum client for Elixir
 
 ## Installation
 
