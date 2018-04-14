@@ -6,6 +6,7 @@ defmodule EXW3Test do
     %{
       simple_storage_abi: ExW3.load_abi("test/examples/build/SimpleStorage.abi"),
       array_tester_abi: ExW3.load_abi("test/examples/build/ArrayTester.abi"),
+      event_tester_abi: ExW3.load_abi("test/examples/build/EventTester.abi"),
       accounts: ExW3.accounts
     }
   end
@@ -26,6 +27,18 @@ defmodule EXW3Test do
     assert context[:simple_storage_abi] |> is_map
   end
 
+  test "mines a block" do
+    block_number = ExW3.block_number
+    ExW3.mine
+    assert ExW3.block_number == block_number + 1 
+  end
+
+  test "mines multiple blocks" do
+    block_number = ExW3.block_number
+    ExW3.mine 5
+    assert ExW3.block_number == block_number + 5
+  end
+
   test "deploys simple storage and uses it", context do
     contract_address = ExW3.Contract.deploy(
       "test/examples/build/SimpleStorage.bin", 
@@ -41,13 +54,38 @@ defmodule EXW3Test do
 
     assert result == 0
 
-    {:ok, tx_id} = ExW3.Contract.method(storage, "set", [1], %{from: Enum.at(context[:accounts], 0)})
+    {:ok, tx_hash} = ExW3.Contract.method(storage, "set", [1], %{from: Enum.at(context[:accounts], 0)})
 
-    IO.inspect ExW3.tx_receipt tx_id
+    receipt = ExW3.tx_receipt tx_hash
+
+    #IO.inspect ExW3.block receipt["blockNumber"]
 
     {:ok, result} = ExW3.Contract.method(storage, "get")
 
     assert result == 1
+
+  end
+
+  test "deploys event tester and uses it", context do
+    contract_address = ExW3.Contract.deploy(
+      "test/examples/build/EventTester.bin",
+      %{
+        from: Enum.at(context[:accounts], 0),
+        gas: 300000
+      }
+    )
+
+    event_tester = ExW3.Contract.at context[:event_tester_abi], contract_address
+
+    {:ok, tx_hash} = ExW3.Contract.method(event_tester, "simple", ["hello, there!"], %{from: Enum.at(context[:accounts], 0)})
+
+    receipt = ExW3.tx_receipt tx_hash
+
+    logs = receipt["logs"]
+
+    topic = Map.get(Enum.at(logs, 0), "topics")
+
+    assert String.slice(Enum.at(topic, 0), 2..-1) == ExW3.encode_event("Simple(uint256,bytes32)")
 
   end
 

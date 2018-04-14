@@ -83,7 +83,7 @@ defmodule ExW3 do
   end
 
   #Converts ethereum hex string to decimal number
-  defp to_decimal hex_string do
+  def to_decimal hex_string do
     hex_string
     |> String.slice(2..-1)
     |> String.to_integer(16)
@@ -105,7 +105,7 @@ defmodule ExW3 do
     end
   end
 
-  defp keys_to_decimal map, keys do
+  def keys_to_decimal map, keys do
     Map.new(
       Enum.map keys, fn k ->
         { k, Map.get(map, k) |> to_decimal }
@@ -113,12 +113,31 @@ defmodule ExW3 do
     )
   end
 
-  def tx_receipt tx_id do
-    case Ethereumex.HttpClient.eth_get_transaction_receipt(tx_id) do
+  def tx_receipt tx_hash do
+    case Ethereumex.HttpClient.eth_get_transaction_receipt(tx_hash) do
       {:ok, receipt} -> 
         Map.merge receipt, keys_to_decimal(receipt, ["blockNumber", "cumulativeGasUsed", "gasUsed"])
       err -> err
     end
   end
+
+  def block block_number do
+    case Ethereumex.HttpClient.eth_get_block_by_number(block_number, true) do
+      {:ok, block} -> block
+      err -> err
+    end
+  end
+
+  def mine(num_blocks \\ 1) do
+    for _ <- 0..(num_blocks - 1) do
+      Ethereumex.HttpClient.request("evm_mine", [], [])
+    end
+  end
+
+  def encode_event(signature) do
+    ExthCrypto.Hash.Keccak.kec(signature) |> Base.encode16(case: :lower)
+  end
+
+
 
 end

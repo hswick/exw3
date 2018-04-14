@@ -1,0 +1,1 @@
+[{"constant":false,"inputs":[{"name":"data","type":"bytes32"}],"name":"simple","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"num","type":"uint256"},{"indexed":false,"name":"data","type":"bytes32"}],"name":"Simple","type":"event"}]
