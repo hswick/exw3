@@ -50,17 +50,17 @@ defmodule EXW3Test do
 
     storage = ExW3.Contract.at context[:simple_storage_abi], contract_address
 
-    {:ok, result} = ExW3.Contract.method(storage, "get")
+    {:ok, result} = ExW3.Contract.method(storage, :get)
 
     assert result == 0
 
-    {:ok, tx_hash} = ExW3.Contract.method(storage, "set", [1], %{from: Enum.at(context[:accounts], 0)})
+    {:ok, tx_hash} = ExW3.Contract.method(storage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
 
     receipt = ExW3.tx_receipt tx_hash
 
     #IO.inspect ExW3.block receipt["blockNumber"]
 
-    {:ok, result} = ExW3.Contract.method(storage, "get")
+    {:ok, result} = ExW3.Contract.method(storage, :get)
 
     assert result == 1
 
@@ -79,9 +79,24 @@ defmodule EXW3Test do
 
     {:ok, event_pub} = ExW3.EventPublisher.start_link
 
-    ExW3.subscribe("Simple(uint256,bytes32)", fn event -> IO.inspect event end)
+    {:ok, pid} = ExW3.EventSubscriber.start_link(
+      "Simple(uint256,bytes32)", 
+      fn event_data ->
+        str =
+          event_data
+          |> Enum.at(1)
+          |> ExW3.bytes_to_string
 
-    {:ok, tx_hash} = ExW3.Contract.method(event_tester, "simple", ["hello, there!"], %{from: Enum.at(context[:accounts], 0)})
+        assert str == "Hello, World!"
+      end
+    )
+
+    {:ok, tx_hash} = ExW3.Contract.method(
+      event_tester, 
+      :simple,
+      ["Hello, World!"],
+      %{from: Enum.at(context[:accounts], 0)}
+    )
 
     receipt = ExW3.tx_receipt tx_hash
 
@@ -91,7 +106,7 @@ defmodule EXW3Test do
 
     assert String.slice(Enum.at(topic, 0), 2..-1) == ExW3.encode_event("Simple(uint256,bytes32)")
 
-    :timer.sleep(5000)
+    :timer.sleep(2000)
 
   end
 
@@ -108,12 +123,12 @@ defmodule EXW3Test do
 
     arr = [1, 2, 3, 4, 5]
 
-    {:ok, result} = ExW3.Contract.method(array_tester, "staticUint", [arr])
+    {:ok, result} = ExW3.Contract.method array_tester, :static_int, [arr]
 
     assert result == arr
 
     #0x5d4e0342
-    {:ok, result} = ExW3.Contract.method(array_tester, "dynamicUint", [arr])
+    {:ok, result} = ExW3.Contract.method array_tester, :dynamic_uint, [arr]
 
     assert result == arr
 

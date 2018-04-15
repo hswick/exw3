@@ -31,7 +31,9 @@ defmodule ExW3.Mixfile do
       {:ethereumex, "~> 0.3.2"},
       {:abi, "~> 0.1.8"},
       {:poison, "~> 3.1"},
-      {:pubsub, "~> 1.0"}
+      {:pubsub, "~> 1.0"},
+      {:inflex, "~> 1.10.0" },
+      {:hexate,  ">= 0.6.0"}
     ]
   end
 end
