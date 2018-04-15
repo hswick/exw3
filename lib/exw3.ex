@@ -1,55 +1,5 @@
 defmodule ExW3 do
 
-  defmodule Contract do
-    use Agent
-    
-    def at(abi, address) do
-      { :ok, pid } = Agent.start_link(fn -> %{abi: abi, address: address} end)
-      pid
-    end
-
-    def get(contract, key) do
-      Agent.get(contract, &Map.get(&1, key))
-    end
-
-    @doc """
-    Puts the `value` for the given `key` in the `contract`.
-    """
-    def put(contract, key, value) do
-      Agent.update(contract, &Map.put(&1, key, value))
-    end
-
-    def deploy(bin_filename, options) do
-      {:ok, bin} = File.read(Path.join(System.cwd(), bin_filename))
-      tx = %{
-        from: options[:from],
-        data: bin,
-        gas: options[:gas]
-      }
-      {:ok, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
-      {:ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_receipt_id)
-
-      tx_receipt["contractAddress"]
-    end
-
-    def method(contract_agent, name, args \\ [], options \\ %{}) do
-      if get(contract_agent, :abi)[name]["constant"] do
-        data = ExW3.encode_inputs(get(contract_agent, :abi), name, args)
-        {:ok, output } = Ethereumex.HttpClient.eth_call(%{
-          to: get(contract_agent, :address),
-          data: data
-        })
-        [ :ok ] ++ ExW3.decode_output(get(contract_agent, :abi), name, output) |> List.to_tuple
-      else
-        Ethereumex.HttpClient.eth_send_transaction(Map.merge(%{
-          to: get(contract_agent, :address),
-          data: ExW3.encode_inputs(get(contract_agent, :abi), name, args)
-        }, options))
-      end
-    end
-
-  end
-
   def reformat_abi abi do
     Map.new Enum.map(abi, fn x -> {x["name"], x} end)
   end
@@ -116,7 +66,8 @@ defmodule ExW3 do
   def tx_receipt tx_hash do
     case Ethereumex.HttpClient.eth_get_transaction_receipt(tx_hash) do
       {:ok, receipt} -> 
-        Map.merge receipt, keys_to_decimal(receipt, ["blockNumber", "cumulativeGasUsed", "gasUsed"])
+        receipt
+        #Map.merge receipt, keys_to_decimal(receipt, ["blockNumber", "cumulativeGasUsed", "gasUsed"])
       err -> err
     end
   end
@@ -138,6 +89,119 @@ defmodule ExW3 do
     ExthCrypto.Hash.Keccak.kec(signature) |> Base.encode16(case: :lower)
   end
 
+  defmodule Contract do
+    use Agent
+    
+    def at(abi, address) do
+      { :ok, pid } = Agent.start_link(fn -> %{abi: abi, address: address} end)
+      pid
+    end
 
+    def get(contract, key) do
+      Agent.get(contract, &Map.get(&1, key))
+    end
 
+    @doc """
+    Puts the `value` for the given `key` in the `contract`.
+    """
+    def put(contract, key, value) do
+      Agent.update(contract, &Map.put(&1, key, value))
+    end
+
+    def deploy(bin_filename, options) do
+      {:ok, bin} = File.read(Path.join(System.cwd(), bin_filename))
+      tx = %{
+        from: options[:from],
+        data: bin,
+        gas: options[:gas]
+      }
+      {:ok, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
+      {:ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_receipt_id)
+
+      tx_receipt["contractAddress"]
+    end
+
+    def method(contract_agent, name, args \\ [], options \\ %{}) do
+      if get(contract_agent, :abi)[name]["constant"] do
+        data = ExW3.encode_inputs(get(contract_agent, :abi), name, args)
+        {:ok, output } = Ethereumex.HttpClient.eth_call(%{
+          to: get(contract_agent, :address),
+          data: data
+        })
+        [ :ok ] ++ ExW3.decode_output(get(contract_agent, :abi), name, output) |> List.to_tuple
+      else
+        Ethereumex.HttpClient.eth_send_transaction(Map.merge(%{
+          to: get(contract_agent, :address),
+          data: ExW3.encode_inputs(get(contract_agent, :abi), name, args)
+        }, options))
+      end
+    end
+
+  end
+
+  defmodule EventPublisher do
+    use GenServer
+
+    def start_link do
+      GenServer.start_link(__MODULE__, %{ block_number: ExW3.block_number})
+    end
+
+    def init(state) do
+      PubSub.start_link()
+      schedule_block()
+      {:ok, state}
+    end
+
+    def subscribe(subscriber, event_signature) do
+      PubSub.subscribe(subscriber, event_signature)
+    end
+
+    def handle_info(:block, state) do
+      block_number = ExW3.block_number
+      block = ExW3.block block_number
+
+      tx_receipts = Enum.map block["transactions"], fn tx -> ExW3.tx_receipt(tx["hash"]) end
+
+      for logs <- Enum.map(tx_receipts, fn receipt -> receipt["logs"] end) do
+        for log <- logs do
+          for topic <- log["topics"] do
+
+            PubSub.publish String.slice(topic, 2..-1), log["data"]
+          end
+        end
+      end
+
+      schedule_block()
+      {:noreply, Map.merge(state, %{block_number: block_number})}
+    end
+
+    defp schedule_block() do
+      Process.send_after(self(), :block, 1000)
+    end
+
+  end
+
+  defmodule EventSubscriber do
+      
+    def start(state) do
+      spawn(fn -> loop(state) end)
+    end
+
+    def loop(state) do
+      receive do
+        message ->
+          apply(state[:callback], [message])
+          loop(state)
+      end
+    end
+    
+  end
+
+  def subscribe signature, callback do
+
+    pid = ExW3.EventSubscriber.start %{callback: callback}
+
+    ExW3.EventPublisher.subscribe pid, ExW3.encode_event(signature)
+
+  end
 end

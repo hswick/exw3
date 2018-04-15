@@ -77,6 +77,10 @@ defmodule EXW3Test do
 
     event_tester = ExW3.Contract.at context[:event_tester_abi], contract_address
 
+    {:ok, event_pub} = ExW3.EventPublisher.start_link
+
+    ExW3.subscribe("Simple(uint256,bytes32)", fn event -> IO.inspect event end)
+
     {:ok, tx_hash} = ExW3.Contract.method(event_tester, "simple", ["hello, there!"], %{from: Enum.at(context[:accounts], 0)})
 
     receipt = ExW3.tx_receipt tx_hash
@@ -86,6 +90,8 @@ defmodule EXW3Test do
     topic = Map.get(Enum.at(logs, 0), "topics")
 
     assert String.slice(Enum.at(topic, 0), 2..-1) == ExW3.encode_event("Simple(uint256,bytes32)")
+
+    :timer.sleep(5000)
 
   end
 
