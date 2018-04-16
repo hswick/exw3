@@ -176,17 +176,17 @@ defmodule ExW3 do
     use GenServer
 
     def start_link do
-      GenServer.start_link(__MODULE__, %{block_number: ExW3.block_number()})
+      GenServer.start_link(__MODULE__, %{block_number: ExW3.block_number(), subscribers: %MapSet{}}, name: ExW3.EventPublisher)
     end
 
     def init(state) do
-      PubSub.start_link()
+      Registry.start_link(keys: :unique, name: Registry.ExW3.EventPubSub)
       schedule_block()
       {:ok, state}
     end
 
-    def subscribe(subscriber, event_signature) do
-      PubSub.subscribe(subscriber, event_signature)
+    def filter_unsubscribed(logs, state) do
+      Enum.filter(logs, fn log -> MapSet.member?(state[:subscribers], log["address"]) end)
     end
 
     def handle_info(:block, state) do
@@ -196,15 +196,24 @@ defmodule ExW3 do
       tx_receipts = Enum.map(block["transactions"], fn tx -> ExW3.tx_receipt(tx["hash"]) end)
 
       for logs <- Enum.map(tx_receipts, fn receipt -> receipt["logs"] end) do
-        for log <- logs do
+        for log <- filter_unsubscribed(logs, state) do
           for topic <- log["topics"] do
-            PubSub.publish(String.slice(topic, 2..-1), log["data"])
+            Registry.dispatch(Registry.ExW3.EventPubSub, String.slice(topic, 2..-1), fn entries ->
+              for {pid, _} <- entries, do: send(pid, {:eth_event, log["data"]})
+            end)
           end
         end
       end
 
       schedule_block()
       {:noreply, Map.merge(state, %{block_number: block_number})}
+    end
+
+    def handle_cast({:new_subscriber, {:address, address}}, state) do
+      {_, new_state} = Map.get_and_update(state, :subscribers, fn subscribers -> 
+        {subscribers, MapSet.put(subscribers, address)}
+      end)
+      {:noreply, new_state}
     end
 
     defp schedule_block() do
@@ -215,27 +224,29 @@ defmodule ExW3 do
   def decode_event(data, signature) do
     fs = ABI.FunctionSelector.decode(signature)
 
+    #IO.inspect fs
+
     data
-    |> Base.decode16!(case: :lower)
-    |> ABI.TypeDecoder.decode(fs)
+    #|> ABI.TypeDecoder.decode(fs)
   end
 
   defmodule EventSubscriber do
-    def start_link(signature, callback) do
-      pid = spawn(fn -> loop(%{callback: callback, signature: signature}) end)
-      ExW3.EventPublisher.subscribe(pid, ExW3.encode_event(signature))
-      {:ok, pid}
+    use GenServer
+
+    def start_link(topic, address, callback) do
+      GenServer.start_link(__MODULE__, %{callback: callback, topic: topic, address: address})
     end
 
-    def loop(state) do
-      receive do
-        message ->
-          apply(state[:callback], [
-            ExW3.decode_event(String.slice(message, 2..-1), state[:signature])
-          ])
+    def init(state) do
+      encoded_event = ExW3.encode_event(state[:topic])
+      Registry.register(Registry.ExW3.EventPubSub, encoded_event, [])
+      GenServer.cast(ExW3.EventPublisher, {:new_subscriber, {:address, state[:address]}})
+      {:ok, state}
+    end
 
-          loop(state)
-      end
+    def handle_info({:eth_event, message}, state) do
+      apply state[:callback], [ExW3.decode_event(message, state[:topic])]
+      {:noreply, state}
     end
   end
 end

@@ -58,6 +58,8 @@ defmodule EXW3Test do
 
     receipt = ExW3.tx_receipt tx_hash
 
+    #IO.inspect receipt
+
     #IO.inspect ExW3.block receipt["blockNumber"]
 
     {:ok, result} = ExW3.Contract.method(storage, :get)
@@ -80,14 +82,14 @@ defmodule EXW3Test do
     {:ok, event_pub} = ExW3.EventPublisher.start_link
 
     {:ok, pid} = ExW3.EventSubscriber.start_link(
-      "Simple(uint256,bytes32)", 
+      "Simple(uint256,bytes32)",
+      contract_address,
       fn event_data ->
         str =
           event_data
-          |> Enum.at(1)
-          |> ExW3.bytes_to_string
 
-        assert str == "Hello, World!"
+        IO.inspect str
+
       end
     )
 
