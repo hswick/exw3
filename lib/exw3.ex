@@ -107,12 +107,39 @@ defmodule ExW3 do
     ExthCrypto.Hash.Keccak.kec(signature) |> Base.encode16(case: :lower)
   end
 
+  def decode_event(data, signature) do
+    formatted_data =
+      data
+      |> String.slice(2..-1)
+      |> Base.decode16!(case: :lower)
+
+    fs = ABI.FunctionSelector.decode(signature)
+
+    ABI.TypeDecoder.decode(formatted_data, fs)
+  end
+
   defmodule Contract do
     use Agent
 
     def at(abi, address) do
-      {:ok, pid} = Agent.start_link(fn -> %{abi: abi, address: address} end)
+      {:ok, pid} = Agent.start_link(fn -> %{abi: abi, address: address, events: setup_events(abi)} end)
       pid
+    end
+
+    defp setup_events(abi) do
+      events = Enum.filter abi, fn {_, v} -> 
+        v["type"] == "event"
+      end
+
+      signature_types_map = Enum.map events, fn  {name, v} ->
+        types = Enum.map v["inputs"], &Map.get(&1, "type")
+        names = Enum.map v["inputs"], &Map.get(&1, "name")
+        signature = Enum.join([name, "(", Enum.join(types, ","), ")"])
+
+        {"0x#{ExW3.encode_event(signature)}", %{signature: signature, names: names}}
+      end
+
+      Enum.into signature_types_map, %{}
     end
 
     def get(contract, key) do
@@ -136,6 +163,7 @@ defmodule ExW3 do
       }
 
       {:ok, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
+      
       {:ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_receipt_id)
 
       tx_receipt["contractAddress"]
@@ -170,83 +198,21 @@ defmodule ExW3 do
         )
       end
     end
-  end
 
-  defmodule EventPublisher do
-    use GenServer
-
-    def start_link do
-      GenServer.start_link(__MODULE__, %{block_number: ExW3.block_number(), subscribers: %MapSet{}}, name: ExW3.EventPublisher)
-    end
-
-    def init(state) do
-      Registry.start_link(keys: :unique, name: Registry.ExW3.EventPubSub)
-      schedule_block()
-      {:ok, state}
-    end
-
-    def filter_unsubscribed(logs, state) do
-      Enum.filter(logs, fn log -> MapSet.member?(state[:subscribers], log["address"]) end)
-    end
-
-    def handle_info(:block, state) do
-      block_number = ExW3.block_number()
-      block = ExW3.block(block_number)
-
-      tx_receipts = Enum.map(block["transactions"], fn tx -> ExW3.tx_receipt(tx["hash"]) end)
-
-      for logs <- Enum.map(tx_receipts, fn receipt -> receipt["logs"] end) do
-        for log <- filter_unsubscribed(logs, state) do
-          for topic <- log["topics"] do
-            Registry.dispatch(Registry.ExW3.EventPubSub, String.slice(topic, 2..-1), fn entries ->
-              for {pid, _} <- entries, do: send(pid, {:eth_event, log["data"]})
-            end)
-          end
+    def tx_receipt(contract_agent, tx_hash) do
+      receipt = ExW3.tx_receipt tx_hash
+      events = get(contract_agent, :events)
+      logs = receipt["logs"]
+      Enum.map logs, fn log ->
+        topic = Enum.at log["topics"], 0
+        event = Map.get events, topic
+        if event do
+          Enum.zip(event[:names], ExW3.decode_event(log["data"], event[:signature])) |> Enum.into %{}
+        else
+          nil
         end
       end
-
-      schedule_block()
-      {:noreply, Map.merge(state, %{block_number: block_number})}
-    end
-
-    def handle_cast({:new_subscriber, {:address, address}}, state) do
-      {_, new_state} = Map.get_and_update(state, :subscribers, fn subscribers -> 
-        {subscribers, MapSet.put(subscribers, address)}
-      end)
-      {:noreply, new_state}
-    end
-
-    defp schedule_block() do
-      Process.send_after(self(), :block, 1000)
     end
   end
 
-  def decode_event(data, signature) do
-    fs = ABI.FunctionSelector.decode(signature)
-
-    #IO.inspect fs
-
-    data
-    #|> ABI.TypeDecoder.decode(fs)
-  end
-
-  defmodule EventSubscriber do
-    use GenServer
-
-    def start_link(topic, address, callback) do
-      GenServer.start_link(__MODULE__, %{callback: callback, topic: topic, address: address})
-    end
-
-    def init(state) do
-      encoded_event = ExW3.encode_event(state[:topic])
-      Registry.register(Registry.ExW3.EventPubSub, encoded_event, [])
-      GenServer.cast(ExW3.EventPublisher, {:new_subscriber, {:address, state[:address]}})
-      {:ok, state}
-    end
-
-    def handle_info({:eth_event, message}, state) do
-      apply state[:callback], [ExW3.decode_event(message, state[:topic])]
-      {:noreply, state}
-    end
-  end
 end
