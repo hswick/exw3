@@ -1,4 +1,4 @@
-defmodule ExW3.Mixfile do
+defmodule ExW3.MixProject do
   use Mix.Project
 
   def project do
@@ -7,7 +7,12 @@ defmodule ExW3.Mixfile do
      elixir: "~> 1.1-dev",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps()]
+     deps: deps(),
+     description: description(),
+     package: package(),
+     name: "exw3",
+     source_url: "https://github.com/hswick/exw3"
+    ]
   end
 
   # Configuration for the OTP application
@@ -28,12 +33,26 @@ defmodule ExW3.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [
+      {:ex_doc, ">= 0.0.0", only: :dev},
       {:ethereumex, "~> 0.3.2"},
       {:abi, "~> 0.1.8"},
       {:poison, "~> 3.1"},
-      {:pubsub, "~> 1.0"},
       {:inflex, "~> 1.10.0" },
       {:hexate,  ">= 0.6.0"}
+    ]
+  end
+
+  defp description do
+    "A high level Ethereum JSON RPC Client for Elixir"
+  end
+
+  defp package do
+    [
+      name: "exw3",
+      files: ["lib", "mix.exs", "README*"],
+      maintainers: ["Harley Swick"],
+      licenses: ["Apache 2.0"],
+      links: %{"GitHub" => "https://github.com/hswick/exw3"}
     ]
   end
 end

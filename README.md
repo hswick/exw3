@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./exw3_logo.jpg"/>
+</p>
+
 # ExW3
 
 Ethereum client for Elixir

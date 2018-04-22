@@ -203,15 +203,16 @@ defmodule ExW3 do
       receipt = ExW3.tx_receipt tx_hash
       events = get(contract_agent, :events)
       logs = receipt["logs"]
-      Enum.map logs, fn log ->
+      formatted_logs = Enum.map logs, fn log ->
         topic = Enum.at log["topics"], 0
         event = Map.get events, topic
         if event do
-          Enum.zip(event[:names], ExW3.decode_event(log["data"], event[:signature])) |> Enum.into %{}
+          Enum.zip(event[:names], ExW3.decode_event(log["data"], event[:signature])) |> Enum.into(%{})
         else
           nil
         end
       end
+      {:ok, {receipt, formatted_logs}}
     end
   end
 
