@@ -50,19 +50,13 @@ defmodule EXW3Test do
 
     storage = ExW3.Contract.at context[:simple_storage_abi], contract_address
 
-    {:ok, result} = ExW3.Contract.method(storage, :get)
+    {:ok, result} = ExW3.Contract.method storage, :get
 
     assert result == 0
 
     {:ok, tx_hash} = ExW3.Contract.method(storage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
 
-    receipt = ExW3.tx_receipt tx_hash
-
-    #IO.inspect receipt
-
-    #IO.inspect ExW3.block receipt["blockNumber"]
-
-    {:ok, result} = ExW3.Contract.method(storage, :get)
+    {:ok, result} = ExW3.Contract.method storage, :get
 
     assert result == 1
 
@@ -86,15 +80,15 @@ defmodule EXW3Test do
       %{from: Enum.at(context[:accounts], 0)}
     )
 
-    receipt = ExW3.Contract.tx_receipt(event_tester, tx_hash)
+    {:ok, {receipt, logs}} = ExW3.Contract.tx_receipt(event_tester, tx_hash)
 
-    IO.inspect receipt
+    data =
+      logs
+      |> Enum.at(0)
+      |> Map.get("data")
+      |> ExW3.bytes_to_string()
 
-    #topic = Map.get(Enum.at(logs, 0), "topics")
-
-    #assert String.slice(Enum.at(topic, 0), 2..-1) == ExW3.encode_event("Simple(uint256,bytes32)")
-
-    #:timer.sleep(2000)
+    assert data  == "Hello, World!"
 
   end
 
