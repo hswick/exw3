@@ -26,5 +26,5 @@ solc --version
 
 Then if you've made changes to the example contracts you can compile them like this:
 ```
-solc -o test/examples/build --abi --bin test/examples/contracts/* --overwrite
+mix solc
 ```
