@@ -2,10 +2,6 @@
   <img src="./exw3_logo.jpg"/>
 </p>
 
-# ExW3
-
-Ethereum client for Elixir
-
 ## Installation
 
   1. Add exw3 to your list of dependencies in mix.exs:
