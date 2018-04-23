@@ -1,0 +1,7 @@
+language: elixir
+
+install:
+  - sudo apt-get update
+  - sudo apt-get install nodejs npm
+  - npm install -g ganache-cli
+  - mix deps.get
