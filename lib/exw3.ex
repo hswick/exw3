@@ -17,15 +17,29 @@ defmodule ExW3 do
       String.slice(output, 2..String.length(output)) |> Base.decode16(case: :lower)
 
     output_types = Enum.map(abi[name]["outputs"], fn x -> x["type"] end)
-    output_signature = Enum.join([name, "(", Enum.join(output_types, ")"), ")"])
-    ABI.decode(output_signature, trim_output)
+    types_signature = Enum.join(["(", Enum.join(output_types, ","), ")"])
+    output_signature = "#{name}(#{types_signature})"
+    outputs = ABI.decode(output_signature, trim_output) |> Enum.at(0) |> Tuple.to_list
+    outputs
   end
 
   def encode_input(abi, name, input) do
     if abi[name]["inputs"] do
       input_types = Enum.map(abi[name]["inputs"], fn x -> x["type"] end)
-      input_signature = Enum.join([name, "(", Enum.join(input_types, ","), ")"])
-      ABI.encode(input_signature, input) |> Base.encode16(case: :lower)
+      types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
+      input_signature = "#{name}#{types_signature}" |> ExthCrypto.Hash.Keccak.kec()
+
+      # Take first four bytes
+      <<init::binary-size(4), _rest::binary>> = input_signature
+
+      encoded_input =
+        init <> 
+        ABI.TypeEncoder.encode_raw(
+          [List.to_tuple(input)], 
+          ABI.FunctionSelector.decode_raw(types_signature)
+        )
+
+      encoded_input |> Base.encode16(case: :lower)
     else
       raise "#{name} method not found with the given abi"
     end

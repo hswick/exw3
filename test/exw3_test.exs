@@ -112,9 +112,9 @@ defmodule EXW3Test do
 
     #0x5d4e0342
     # This is currently failing
-    # {:ok, result} = ExW3.Contract.method array_tester, :dynamic_uint, [arr],
+    {:ok, result} = ExW3.Contract.method array_tester, :dynamic_uint, [arr]
 
-    # assert result == arr
+    assert result == arr
 
   end
 
