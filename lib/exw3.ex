@@ -4,7 +4,7 @@ defmodule ExW3 do
     bytes
     |> Base.encode16(case: :lower)
     |> String.replace_trailing("0", "")
-    |> Hexate.decode
+    |> Base.decode16!(case: :lower)
   end
 
   def accounts do
