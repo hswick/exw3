@@ -7,7 +7,7 @@
   1. Add exw3 to your list of dependencies in mix.exs:
 
         def deps do
-          [{:exw3, "~> 0.0.2"}]
+          [{:exw3, "~> 0.1.0"}]
         end
 
   2. Ensure exw3 is started before your application:
@@ -18,7 +18,7 @@
 
 ## Overview
 
-ExW3 is a wrapper around ethereumex to provide a high level, and user friendly json rpc api. It currently only supports Http.
+ExW3 is a wrapper around ethereumex to provide a high level, and user friendly json rpc api. It currently only supports Http. The primary feature it provides is a handy abstraction for working with smart contracts.
 
 ## Usage
 
@@ -36,21 +36,21 @@ config :ethereumex,
 Currently ExW3 supports a handful of json rpc commands. Mostly just the useful ones. If it doesn't support those specific commands you can always use the Ethereumex commands.
 
 ```elixir
-iex(1)> accounts = ExW3.accounts()                                        
-["0x957e3d06f15d6fc3913a24c5c41009784a4ec683",
- "0xa9a5037dc1cba71609792e3309b57e777ae01c0f",
- "0x4944392f44d60f2f949ba241244401bd43863c1c",
- "0xc0fe85ae40d6dd480ccbf31902bdb6b90057c908",
- "0xc06f7379abb368c54059c78f9ef524d8badcb7da",
- "0x0de579fe6dcd60620e10e1ce447dfb6077306e68",
- "0x8895d7195659cbcb442825b62bb028176ab126f6",
- "0x205b8d4b9b52e9653d9ea29815bfa2ccf9f11b71",
- "0xefe82d7b1e7bed2e3bfe7b5a155cff7a5adf0dcc",
- "0x93d1f6303711e5c9fa849cfad38d5782740d39fe"]
-iex(2)> ExW3.balance(Enum.at(accounts, 0))                                      
-100000000000000000000
-iex(3)> ExW3.block_number()            
-0
+iex(1)> accounts = ExW3.accounts()
+["0xb5c17637ccc1a5d91715429de76949fbe49d36f0",
+ "0xecf00f60a29acf81d7fdf696fd2ca1fa82b623b0",
+ "0xbf11365685e07ad86387098f27204700d7568ee2",
+ "0xba76d611c29fb25158e5a7409cb627cf1bd220cf",
+ "0xbb209f51ef097cc5ca320264b5373a48f7ee0fba",
+ "0x31b7a2c8b2f82a92bf4cb5fd13971849c6c956fc",
+ "0xeb943cee8ec3723ab3a06e45dc2a75a3caa04288",
+ "0x59315d9706ac567d01860d7ede03720876972162",
+ "0x4dbd23f361a4df1ef5e517b68e099bf2fcc77b10",
+ "0x150eb320428b9bc93453b850b4ea454a35308f17"]
+iex(2)> ExW3.balance(Enum.at(accounts, 0))
+99999999999962720359
+iex(3)> ExW3.block_number()
+835
 iex(4)> simple_storage_abi = ExW3.load_abi("test/examples/build/SimpleStorage.abi")
 %{
   "get" => %{
@@ -72,32 +72,21 @@ iex(4)> simple_storage_abi = ExW3.load_abi("test/examples/build/SimpleStorage.ab
     "type" => "function"
   }
 }
-iex(5)> contract_address = ExW3.Contract.deploy("test/examples/build/SimpleStorage.bin", %{from: Enum.at(accounts, 0), gas: 150000})
-"0xecac9f4000ae355c7d33481edb0fddbece502423"
-iex(6)> storage_pid = ExW3.Contract.at(simple_storage_abi, contract_address) 
-#PID<0.257.0>
-iex(7)> ExW3.Contract.method(storage_pid, "get")
+iex(5)> ExW3.Contract.start_link(SimpleStorage, abi: simple_storage_abi)
+{:ok, #PID<0.239.0>}
+iex(6)> {:ok, address} = ExW3.Contract.deploy(SimpleStorage, bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"), options: %{gas: 300000, from: Enum.at(accounts, 0)})
+{:ok, "0xd99306b81bd61cb0ecdd3f2c946af513b3395088"}
+iex(7)> ExW3.Contract.at(SimpleStorage, address)
+:ok
+iex(8)> ExW3.Contract.call(SimpleStorage, :get)
 {:ok, 0}
-iex(8)> ExW3.Contract.method(storage_pid, "set", [1], %{from: Enum.at(accounts, 0)})
-{:ok, "0xb8a6ee58c88efcea775452a68fac20e47bda6ca933aa25dd85c4a97b0cfbf43f"}
-iex(9)> ExW3.Contract.method(storage_pid, "get")                          
+iex(9)> ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(accounts, 0)})
+{:ok, "0xb7e9cbdd2cec8ca017e675059a3af063d754496c960f156e1a41fe51ea82f3b8"}
+iex(10)> ExW3.Contract.call(SimpleStorage, :get)                                
 {:ok, 1}
 ```
 
-For bonus style points you can use snake case keywords for the method names. For example:
-
-```elixir
-ExW3.Contract.method(pid, "fooBar")
-```
-
-is the same as:
-
-```elixir
-ExW3.Contract.method(pid, :foo_bar)
-```
-
-
-## Compiling solidity
+## Compiling Solidity
 
 Ensure you have solc installed:
 
