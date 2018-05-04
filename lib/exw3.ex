@@ -1,55 +1,10 @@
 defmodule ExW3 do
-  def reformat_abi(abi) do
-    Map.new(Enum.map(abi, fn x -> {x["name"], x} end))
-  end
-
-  def load_abi(file_path) do
-    file = File.read(Path.join(System.cwd(), file_path))
-
-    case file do
-      {:ok, abi} -> reformat_abi(Poison.Parser.parse!(abi))
-      err -> err
-    end
-  end
-
-  def decode_output(abi, name, output) do
-    {:ok, trim_output} =
-      String.slice(output, 2..String.length(output)) |> Base.decode16(case: :lower)
-
-    output_types = Enum.map(abi[name]["outputs"], fn x -> x["type"] end)
-    types_signature = Enum.join(["(", Enum.join(output_types, ","), ")"])
-    output_signature = "#{name}(#{types_signature})"
-    outputs = ABI.decode(output_signature, trim_output) |> Enum.at(0) |> Tuple.to_list
-    outputs
-  end
-
-  def encode_input(abi, name, input) do
-    if abi[name]["inputs"] do
-      input_types = Enum.map(abi[name]["inputs"], fn x -> x["type"] end)
-      types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
-      input_signature = "#{name}#{types_signature}" |> ExthCrypto.Hash.Keccak.kec()
-
-      # Take first four bytes
-      <<init::binary-size(4), _rest::binary>> = input_signature
-
-      encoded_input =
-        init <> 
-        ABI.TypeEncoder.encode_raw(
-          [List.to_tuple(input)], 
-          ABI.FunctionSelector.decode_raw(types_signature)
-        )
-
-      encoded_input |> Base.encode16(case: :lower)
-    else
-      raise "#{name} method not found with the given abi"
-    end
-  end
 
   def bytes_to_string bytes do
     bytes
     |> Base.encode16(case: :lower)
     |> String.replace_trailing("0", "")
-    |> Hexate.decode
+    |> Base.decode16!(case: :lower)
   end
 
   def accounts do
@@ -132,15 +87,139 @@ defmodule ExW3 do
     ABI.TypeDecoder.decode(formatted_data, fs)
   end
 
-  defmodule Contract do
-    use Agent
+  def reformat_abi(abi) do
+    Map.new(Enum.map(abi, fn x -> {x["name"], x} end))
+  end
 
-    def at(abi, address) do
-      {:ok, pid} = Agent.start_link(fn -> %{abi: abi, address: address, events: setup_events(abi)} end)
-      pid
+  def load_abi(file_path) do
+    file = File.read(Path.join(System.cwd(), file_path))
+
+    case file do
+      {:ok, abi} -> reformat_abi(Poison.Parser.parse!(abi))
+      err -> err
+    end
+  end
+
+  def load_bin(file_path) do
+    file = File.read(Path.join(System.cwd(), file_path))
+
+    case file do
+      {:ok, bin} -> bin
+      err -> err
+    end  
+  end
+
+  def decode_output(abi, name, output) do
+    {:ok, trim_output} =
+      String.slice(output, 2..String.length(output)) |> Base.decode16(case: :lower)
+
+    output_types = Enum.map(abi[name]["outputs"], fn x -> x["type"] end)
+    types_signature = Enum.join(["(", Enum.join(output_types, ","), ")"])
+    output_signature = "#{name}(#{types_signature})"
+    outputs = 
+      ABI.decode(output_signature, trim_output)
+      |> List.first 
+      |> Tuple.to_list
+
+    outputs
+  end
+
+  def types_signature(abi, name) do
+    input_types = Enum.map(abi[name]["inputs"], fn x -> x["type"] end)
+    types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
+    types_signature
+  end
+
+  def method_signature(abi, name) do
+    if abi[name] do
+      input_signature = "#{name}#{types_signature(abi, name)}" |> ExthCrypto.Hash.Keccak.kec()
+
+      # Take first four bytes
+      <<init::binary-size(4), _rest::binary>> = input_signature
+      init 
+    else
+      raise "#{name} method not found in the given abi"
+    end
+  end
+
+  def encode_data(types_signature, data) do
+    ABI.TypeEncoder.encode_raw(
+      [List.to_tuple(data)], 
+      ABI.FunctionSelector.decode_raw(types_signature)
+    )
+  end
+
+  def encode_method_call(abi, name, input) do
+    encoded_method_call = method_signature(abi, name) <> encode_data(types_signature(abi, name), input)
+    encoded_method_call |> Base.encode16(case: :lower)
+  end
+
+  def encode_input(abi, name, input) do
+    if abi[name]["inputs"] do
+      input_types = Enum.map(abi[name]["inputs"], fn x -> x["type"] end)
+      types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
+      input_signature = "#{name}#{types_signature}" |> ExthCrypto.Hash.Keccak.kec()
+
+      # Take first four bytes
+      <<init::binary-size(4), _rest::binary>> = input_signature
+
+      encoded_input =
+        init <> 
+        ABI.TypeEncoder.encode_raw(
+          [List.to_tuple(input)],
+          ABI.FunctionSelector.decode_raw(types_signature)
+        )
+
+      encoded_input |> Base.encode16(case: :lower)
+    else
+      raise "#{name} method not found with the given abi"
+    end
+  end
+
+  defmodule Contract do
+    use GenServer
+
+    # Client
+
+    def start_link(name, state) do
+      GenServer.start_link(__MODULE__, state, name: name)
     end
 
-    defp setup_events(abi) do
+    def deploy(pid, args) do
+      GenServer.call(pid, {:deploy, args})
+    end
+
+    def at(pid, address) do
+      GenServer.cast(pid, {:at, address})
+    end
+
+    def address(pid) do
+      GenServer.call(pid, :address)
+    end
+
+    def call(pid, method_name, args \\ []) do
+      GenServer.call(pid, {:call, {method_name, args}})
+    end
+
+    def send(pid, method_name, args, options) do
+      GenServer.call(pid, {:send, {method_name, args, options}})
+    end
+
+    def tx_receipt(pid, tx_hash) do
+      GenServer.call(pid, {:tx_receipt, tx_hash})
+    end
+
+    # Server
+  
+    def init(state) do
+      if state[:abi] do
+        {:ok, [{:events, init_events(state[:abi])} | state]}
+      else
+        raise "ABI not provided upon initialization"
+      end
+    end
+
+    defp init_events(abi) do
       events = Enum.filter abi, fn {_, v} -> 
         v["type"] == "event"
       end
@@ -153,27 +232,29 @@ defmodule ExW3 do
         {"0x#{ExW3.encode_event(signature)}", %{signature: signature, names: names}}
       end
 
-      Enum.into signature_types_map, %{}
+      Enum.into(signature_types_map, %{})
     end
 
-    def get(contract, key) do
-      Agent.get(contract, &Map.get(&1, key))
-    end
+    # Helpers
 
-    @doc """
-    Puts the `value` for the given `key` in the `contract`.
-    """
-    def put(contract, key, value) do
-      Agent.update(contract, &Map.put(&1, key, value))
-    end
+    def deploy_helper(bin, abi, args) do
 
-    def deploy(bin_filename, options) do
-      {:ok, bin} = File.read(Path.join(System.cwd(), bin_filename))
+      constructor_arg_data =
+        if args[:args] do
+          {_, constructor} = Enum.find abi, fn {_, v} -> 
+            v["type"] == "constructor"
+          end
+          input_types = Enum.map(constructor["inputs"], fn x -> x["type"] end)
+          types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
+          bin <> (ExW3.encode_data(types_signature, args[:args]) |> Base.encode16(case: :lower))
+        else
+          bin
+        end
 
       tx = %{
-        from: options[:from],
-        data: bin,
-        gas: options[:gas]
+        from: args[:options][:from],
+        data: constructor_arg_data,
+        gas: args[:options][:gas]
       }
 
       {:ok, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
@@ -183,39 +264,73 @@ defmodule ExW3 do
       tx_receipt["contractAddress"]
     end
 
-    def method(contract_agent, method_name, args \\ [], options \\ %{}) do
-      method_name = 
-        case method_name |> is_atom do
-          true -> Inflex.camelize(method_name, :lower)
-          false -> method_name
-        end
+    def eth_call_helper(address, abi, method_name, args) do 
+      result = Ethereumex.HttpClient.eth_call(%{
+        to: address, 
+        data: ExW3.encode_method_call(abi, method_name, args)
+      })
 
-      input = ExW3.encode_input(get(contract_agent, :abi), method_name, args)
-
-      if get(contract_agent, :abi)[method_name]["constant"] do
-        {:ok, output} =
-          Ethereumex.HttpClient.eth_call(%{
-            to: get(contract_agent, :address),
-            data: input
-          })
-
-        ([:ok] ++ ExW3.decode_output(get(contract_agent, :abi), method_name, output)) |> List.to_tuple()
-      else
-        Ethereumex.HttpClient.eth_send_transaction(
-          Map.merge(
-            %{
-              to: get(contract_agent, :address),
-              data: input
-            },
-            options
-          )
-        )
+      case result do
+        {:ok, data} -> ([:ok] ++ ExW3.decode_output(abi, method_name, data)) |> List.to_tuple()
+        {:error, err} -> {:error, err}
       end
     end
 
-    def tx_receipt(contract_agent, tx_hash) do
+    def eth_send_helper(address, abi, method_name, args, options) do
+      Ethereumex.HttpClient.eth_send_transaction(
+        Map.merge(
+          %{
+            to: address,
+            data: ExW3.encode_method_call(abi, method_name, args)
+          },
+          options
+        )
+      )
+    end
+
+    # Casts
+
+    def handle_cast({:at, address}, state) do
+      {:noreply, [{:address, address} | state]}
+    end
+
+    # Calls
+
+    def handle_call({:deploy, args}, _from, state) do
+      case {args[:bin], state[:bin]} do
+        {nil, nil} -> {:reply, {:error, "contract binary was never provided"}, state}
+        {bin, nil} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
+        {nil, bin} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
+      end
+    end
+
+    def handle_call(:address, _from, state) do
+      {:reply, state[:address], state}
+    end
+
+    def handle_call({:call, {method_name, args}}, _from, state) do
+      address = state[:address]
+      if address do
+        result = eth_call_helper(address, state[:abi], Atom.to_string(method_name), args)
+        {:reply, result, state}
+      else
+        {:reply, {:error, "contract address not available"}, state}
+      end
+    end
+
+    def handle_call({:send, {method_name, args, options}}, _from, state) do
+      address = state[:address]
+      if address do
+        result = eth_send_helper(address, state[:abi], Atom.to_string(method_name), args, options)
+        {:reply, result, state}
+      else
+        {:reply, {:error, "contract address not available"}, state}
+      end
+    end
+
+    def handle_call({:tx_receipt, tx_hash}, _from, state) do
       receipt = ExW3.tx_receipt tx_hash
-      events = get(contract_agent, :events)
+      events = state[:events]
       logs = receipt["logs"]
       formatted_logs = Enum.map logs, fn log ->
         topic = Enum.at log["topics"], 0
@@ -226,8 +341,9 @@ defmodule ExW3 do
           nil
         end
       end
-      {:ok, {receipt, formatted_logs}}
+      {:reply, {:ok, {receipt, formatted_logs}}, state}
     end
+
   end
 
 end

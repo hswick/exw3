@@ -3,8 +3,8 @@ defmodule ExW3.MixProject do
 
   def project do
     [app: :exw3,
-     version: "0.0.2",
-     elixir: "~> 1.1-dev",
+     version: "0.1.0",
+     elixir: "~> 1.6.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps(),
@@ -36,9 +36,7 @@ defmodule ExW3.MixProject do
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:ethereumex, "~> 0.3.2"},
       {:abi, "~> 0.1.8"},
-      {:poison, "~> 3.1"},
-      {:inflex, "~> 1.10.0" },
-      {:hexate,  ">= 0.6.0"}
+      {:poison, "~> 3.1"}
     ]
   end
 
