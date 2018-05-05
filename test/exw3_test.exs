@@ -47,6 +47,7 @@ defmodule EXW3Test do
       ExW3.Contract.deploy(
         SimpleStorage,
         bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+        args: [],
         options: %{
           gas: 300_000,
           from: Enum.at(context[:accounts], 0)
