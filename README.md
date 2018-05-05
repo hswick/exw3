@@ -27,6 +27,8 @@ config :ethereumex,
 
 Currently, ExW3 supports a handful of json rpc commands. Mostly just the useful ones. If it doesn't support a specific commands you can always use the [Ethereumex](https://github.com/exthereum/ethereumex) commands.
 
+Check out the [documentation](https://hexdocs.pm/exw3/ExW3.html)
+
 ```elixir
 iex(1)> accounts = ExW3.accounts()
 ["0xb5c17637ccc1a5d91715429de76949fbe49d36f0",
