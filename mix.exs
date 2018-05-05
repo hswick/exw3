@@ -54,13 +54,3 @@ defmodule ExW3.MixProject do
     ]
   end
 end
-
-defmodule Mix.Tasks.Solc do
-  use Mix.Task
-
-  @shortdoc "Runs the solc compiler to create binary and abi of all contracts. Outputs to build directory"
-  def run(_) do
-    # calling our Hello.say() function from earlier
-    Mix.Shell.IO.cmd("solc -o test/examples/build --abi --bin test/examples/contracts/* --overwrite")
-  end
-end

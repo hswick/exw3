@@ -4,25 +4,17 @@
 
 ## Installation
 
-  1. Add exw3 to your list of dependencies in mix.exs:
-
         def deps do
-          [{:exw3, "~> 0.1.0"}]
-        end
-
-  2. Ensure exw3 is started before your application:
-
-        def application do
-          [applications: [:exw3]]
+          [{:exw3, "~> 0.1.1"}]
         end
 
 ## Overview
 
-ExW3 is a wrapper around ethereumex to provide a high level, and user friendly json rpc api. It currently only supports Http. The primary feature it provides is a handy abstraction for working with smart contracts.
+ExW3 is a wrapper around ethereumex to provide a high level, user friendly json rpc api. It currently only supports Http. The primary feature it provides is a handy abstraction for working with smart contracts.
 
 ## Usage
 
-Ensure you have an ethereum node to connect to at the specified url in your config. Any easy local testnet to use is ganache-cli:
+Ensure you have an ethereum node to connect to at the specified url in your config. An easy local testnet to use is ganache-cli:
 ```
 ganache-cli
 ```
@@ -33,7 +25,7 @@ config :ethereumex,
   url: "http://localhost:8545"
 ```
 
-Currently ExW3 supports a handful of json rpc commands. Mostly just the useful ones. If it doesn't support those specific commands you can always use the Ethereumex commands.
+Currently, ExW3 supports a handful of json rpc commands. Mostly just the useful ones. If it doesn't support a specific commands you can always use the [Ethereumex](https://github.com/exthereum/ethereumex) commands.
 
 ```elixir
 iex(1)> accounts = ExW3.accounts()
@@ -84,17 +76,4 @@ iex(9)> ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(accounts, 0
 {:ok, "0xb7e9cbdd2cec8ca017e675059a3af063d754496c960f156e1a41fe51ea82f3b8"}
 iex(10)> ExW3.Contract.call(SimpleStorage, :get)                                
 {:ok, 1}
-```
-
-## Compiling Solidity
-
-Ensure you have solc installed:
-
-```
-solc --version
-```
-
-Then if you've made changes to the example contracts you can compile them like this:
-```
-mix solc
 ```
