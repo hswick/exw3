@@ -5,12 +5,12 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.18.3">
-    <title>ExW3 – exw3 v0.0.2</title>
+    <title>ExW3 – exw3 v0.1.0</title>
     <link rel="stylesheet" href="dist/app-480ffdc169.css" />
     
       <link rel="canonical" href="https://hexdocs.pm/exw3/ExW3.html" />
     
-    <script src="dist/sidebar_items-8f71fb01e6.js"></script>
+    <script src="dist/sidebar_items-fa0908e9e2.js"></script>
     
     
     
@@ -37,7 +37,7 @@
         exw3
       </h1>
       <h2 class="sidebar-projectVersion">
-        v0.0.2
+        v0.1.0
       </h2>
     </div>
     
@@ -71,7 +71,7 @@
 
 
       <h1>
-        <small class="visible-xs">exw3 v0.0.2</small>
+        <small class="visible-xs">exw3 v0.1.0</small>
         ExW3
         
           <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L1" title="View Source" class="view-source" rel="help">
@@ -143,6 +143,12 @@
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#encode_data/2">encode_data(types_signature, data)</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#encode_event/1">encode_event(signature)</a>
   </div>
   
@@ -155,6 +161,12 @@
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#encode_method_call/3">encode_method_call(abi, name, input)</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#keys_to_decimal/2">keys_to_decimal(map, keys)</a>
   </div>
   
@@ -162,6 +174,18 @@
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#load_abi/1">load_abi(file_path)</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#load_bin/1">load_bin(file_path)</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#method_signature/2">method_signature(abi, name)</a>
   </div>
   
 </div>
@@ -186,6 +210,12 @@
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#tx_receipt/1">tx_receipt(tx_hash)</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#types_signature/2">types_signature(abi, name)</a>
   </div>
   
 </div>
@@ -219,7 +249,7 @@
     </a>
     <span class="signature">accounts()</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L55" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L10" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -241,7 +271,7 @@
     </a>
     <span class="signature">balance(account)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L79" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -263,7 +293,7 @@
     </a>
     <span class="signature">block(block_number)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L107" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L62" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -285,7 +315,7 @@
     </a>
     <span class="signature">block_number()</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L69" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L24" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -307,7 +337,7 @@
     </a>
     <span class="signature">bytes_to_string(bytes)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L48" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L3" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -329,7 +359,7 @@
     </a>
     <span class="signature">decode_event(data, signature)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L124" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L79" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -351,7 +381,29 @@
     </a>
     <span class="signature">decode_output(abi, name, output)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L15" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L112" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+    
+    
+    
+  </div>
+  <section class="docstring">
+    
+  </section>
+</div>
+<div class="detail" id="encode_data/2">
+  
+  
+  <div class="detail-header">
+    <a href="#encode_data/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">encode_data(types_signature, data)</span>
+    
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L145" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -373,7 +425,7 @@
     </a>
     <span class="signature">encode_event(signature)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L120" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L75" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -395,7 +447,29 @@
     </a>
     <span class="signature">encode_input(abi, name, input)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L26" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L157" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+    
+    
+    
+  </div>
+  <section class="docstring">
+    
+  </section>
+</div>
+<div class="detail" id="encode_method_call/3">
+  
+  
+  <div class="detail-header">
+    <a href="#encode_method_call/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">encode_method_call(abi, name, input)</span>
+    
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L152" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -417,7 +491,7 @@
     </a>
     <span class="signature">keys_to_decimal(map, keys)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L89" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L44" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -439,7 +513,51 @@
     </a>
     <span class="signature">load_abi(file_path)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L6" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L94" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+    
+    
+    
+  </div>
+  <section class="docstring">
+    
+  </section>
+</div>
+<div class="detail" id="load_bin/1">
+  
+  
+  <div class="detail-header">
+    <a href="#load_bin/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">load_bin(file_path)</span>
+    
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L103" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+    
+    
+    
+  </div>
+  <section class="docstring">
+    
+  </section>
+</div>
+<div class="detail" id="method_signature/2">
+  
+  
+  <div class="detail-header">
+    <a href="#method_signature/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">method_signature(abi, name)</span>
+    
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L133" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -463,7 +581,7 @@
     </a>
     <span class="signature">mine(num_blocks \\ 1)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L114" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L69" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -485,7 +603,7 @@
     </a>
     <span class="signature">reformat_abi(abi)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L2" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L90" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -507,7 +625,7 @@
     </a>
     <span class="signature">to_decimal(hex_string)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L63" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L18" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -529,7 +647,29 @@
     </a>
     <span class="signature">tx_receipt(tx_hash)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L97" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L52" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+    
+    
+    
+  </div>
+  <section class="docstring">
+    
+  </section>
+</div>
+<div class="detail" id="types_signature/2">
+  
+  
+  <div class="detail-header">
+    <a href="#types_signature/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">types_signature(abi, name)</span>
+    
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L127" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

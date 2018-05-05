@@ -241,12 +241,17 @@ defmodule ExW3 do
 
       constructor_arg_data =
         if args[:args] do
-          {_, constructor} = Enum.find abi, fn {_, v} -> 
+          constructor_abi = Enum.find abi, fn {_, v} -> 
             v["type"] == "constructor"
-          end
-          input_types = Enum.map(constructor["inputs"], fn x -> x["type"] end)
-          types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
-          bin <> (ExW3.encode_data(types_signature, args[:args]) |> Base.encode16(case: :lower))
+					end
+					if constructor_abi do
+						{_, constructor} = constructor_abi
+          	input_types = Enum.map(constructor["inputs"], fn x -> x["type"] end)
+          	types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
+						bin <> (ExW3.encode_data(types_signature, args[:args]) |> Base.encode16(case: :lower))
+					else
+						bin
+					end
         else
           bin
         end

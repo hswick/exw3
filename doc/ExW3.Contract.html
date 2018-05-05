@@ -5,12 +5,12 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.18.3">
-    <title>ExW3.Contract – exw3 v0.0.2</title>
+    <title>ExW3.Contract – exw3 v0.1.0</title>
     <link rel="stylesheet" href="dist/app-480ffdc169.css" />
     
       <link rel="canonical" href="https://hexdocs.pm/exw3/ExW3.Contract.html" />
     
-    <script src="dist/sidebar_items-8f71fb01e6.js"></script>
+    <script src="dist/sidebar_items-fa0908e9e2.js"></script>
     
     
     
@@ -37,7 +37,7 @@
         exw3
       </h1>
       <h2 class="sidebar-projectVersion">
-        v0.0.2
+        v0.1.0
       </h2>
     </div>
     
@@ -71,10 +71,10 @@
 
 
       <h1>
-        <small class="visible-xs">exw3 v0.0.2</small>
+        <small class="visible-xs">exw3 v0.1.0</small>
         ExW3.Contract
         
-          <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L135" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L179" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -101,7 +101,19 @@
     </h2>
     <div class="summary-row">
   <div class="summary-signature">
-    <a href="#at/2">at(abi, address)</a>
+    <a href="#address/1">address(pid)</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#at/2">at(pid, address)</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#call/3">call(pid, method_name, args \\ [])</a>
   </div>
   
 </div>
@@ -116,34 +128,53 @@
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#deploy/2">deploy(bin_filename, options)</a>
+    <a href="#deploy/2">deploy(pid, args)</a>
   </div>
   
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#get/2">get(contract, key)</a>
+    <a href="#deploy_helper/3">deploy_helper(bin, abi, args)</a>
   </div>
   
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#method/4">method(contract_agent, method_name, args \\ [], options \\ %{})</a>
+    <a href="#eth_call_helper/4">eth_call_helper(address, abi, method_name, args)</a>
   </div>
   
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#put/3">put(contract, key, value)</a>
+    <a href="#eth_send_helper/5">eth_send_helper(address, abi, method_name, args, options)</a>
   </div>
   
-    <div class="summary-synopsis"><p>Puts the <code class="inline">value</code> for the given <code class="inline">key</code> in the <code class="inline">contract</code></p>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#init/1">init(state)</a>
+  </div>
+  
+    <div class="summary-synopsis"><p>Invoked when the server is started. <code class="inline">start_link/3</code> or <code class="inline">start/3</code> will
+block until it returns</p>
 </div>
   
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#tx_receipt/2">tx_receipt(contract_agent, tx_hash)</a>
+    <a href="#send/4">send(pid, method_name, args, options)</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#start_link/2">start_link(name, state)</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tx_receipt/2">tx_receipt(pid, tx_hash)</a>
   </div>
   
 </div>
@@ -167,7 +198,29 @@
             </a>
             Functions
           </h1>
-          <div class="detail" id="at/2">
+          <div class="detail" id="address/1">
+  
+  
+  <div class="detail-header">
+    <a href="#address/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">address(pid)</span>
+    
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L196" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+    
+    
+    
+  </div>
+  <section class="docstring">
+    
+  </section>
+</div>
+<div class="detail" id="at/2">
   
   
   <div class="detail-header">
@@ -175,9 +228,33 @@
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <span class="signature">at(abi, address)</span>
+    <span class="signature">at(pid, address)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L138" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L192" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+    
+    
+    
+  </div>
+  <section class="docstring">
+    
+  </section>
+</div>
+<div class="detail" id="call/3">
+  
+  
+    <span id="call/2"></span>
+  
+  <div class="detail-header">
+    <a href="#call/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">call(pid, method_name, args \\ [])</span>
+    
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L200" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -199,7 +276,7 @@
     </a>
     <span class="signature">child_spec(arg)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L136" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L180" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -221,9 +298,9 @@
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <span class="signature">deploy(bin_filename, options)</span>
+    <span class="signature">deploy(pid, args)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L170" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L188" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -235,17 +312,17 @@
     
   </section>
 </div>
-<div class="detail" id="get/2">
+<div class="detail" id="deploy_helper/3">
   
   
   <div class="detail-header">
-    <a href="#get/2" class="detail-link" title="Link to this function">
+    <a href="#deploy_helper/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <span class="signature">get(contract, key)</span>
+    <span class="signature">deploy_helper(bin, abi, args)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L159" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L240" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -257,21 +334,17 @@
     
   </section>
 </div>
-<div class="detail" id="method/4">
+<div class="detail" id="eth_call_helper/4">
   
-  
-    <span id="method/2"></span>
-  
-    <span id="method/3"></span>
   
   <div class="detail-header">
-    <a href="#method/4" class="detail-link" title="Link to this function">
+    <a href="#eth_call_helper/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <span class="signature">method(contract_agent, method_name, args \\ [], options \\ %{})</span>
+    <span class="signature">eth_call_helper(address, abi, method_name, args)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L186" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L267" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -283,17 +356,17 @@
     
   </section>
 </div>
-<div class="detail" id="put/3">
+<div class="detail" id="eth_send_helper/5">
   
   
   <div class="detail-header">
-    <a href="#put/3" class="detail-link" title="Link to this function">
+    <a href="#eth_send_helper/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <span class="signature">put(contract, key, value)</span>
+    <span class="signature">eth_send_helper(address, abi, method_name, args, options)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L166" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L279" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -302,8 +375,104 @@
     
   </div>
   <section class="docstring">
-    <p>Puts the <code class="inline">value</code> for the given <code class="inline">key</code> in the <code class="inline">contract</code>.</p>
+    
+  </section>
+</div>
+<div class="detail" id="init/1">
+  
+  
+  <div class="detail-header">
+    <a href="#init/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">init(state)</span>
+    
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L214" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+    
+    
+    
+  </div>
+  <section class="docstring">
+    <p>Invoked when the server is started. <code class="inline">start_link/3</code> or <code class="inline">start/3</code> will
+block until it returns.</p>
+<p><code class="inline">args</code> is the argument term (second argument) passed to <code class="inline">start_link/3</code>.</p>
+<p>Returning <code class="inline">{:ok, state}</code> will cause <code class="inline">start_link/3</code> to return
+<code class="inline">{:ok, pid}</code> and the process to enter its loop.</p>
+<p>Returning <code class="inline">{:ok, state, timeout}</code> is similar to <code class="inline">{:ok, state}</code>
+except <code class="inline">handle_info(:timeout, state)</code> will be called after <code class="inline">timeout</code>
+milliseconds if no messages are received within the timeout.</p>
+<p>Returning <code class="inline">{:ok, state, :hibernate}</code> is similar to
+<code class="inline">{:ok, state}</code> except the process is hibernated before entering the loop. See
+<code class="inline">c:handle_call/3</code> for more information on hibernation.</p>
+<p>Returning <code class="inline">:ignore</code> will cause <code class="inline">start_link/3</code> to return <code class="inline">:ignore</code> and the
+process will exit normally without entering the loop or calling <code class="inline">c:terminate/2</code>.
+If used when part of a supervision tree the parent supervisor will not fail
+to start nor immediately try to restart the <a href="https://hexdocs.pm/elixir/GenServer.html"><code class="inline">GenServer</code></a>. The remainder of the
+supervision tree will be (re)started and so the <a href="https://hexdocs.pm/elixir/GenServer.html"><code class="inline">GenServer</code></a> should not be
+required by other processes. It can be started later with
+<a href="https://hexdocs.pm/elixir/Supervisor.html#restart_child/2"><code class="inline">Supervisor.restart_child/2</code></a> as the child specification is saved in the parent
+supervisor. The main use cases for this are:</p>
+<ul>
+<li>The <a href="https://hexdocs.pm/elixir/GenServer.html"><code class="inline">GenServer</code></a> is disabled by configuration but might be enabled later.
+</li>
+<li>An error occurred and it will be handled by a different mechanism than the
+   <a href="https://hexdocs.pm/elixir/Supervisor.html"><code class="inline">Supervisor</code></a>. Likely this approach involves calling <a href="https://hexdocs.pm/elixir/Supervisor.html#restart_child/2"><code class="inline">Supervisor.restart_child/2</code></a>
+after a delay to attempt a restart.
+</li>
+</ul>
+<p>Returning <code class="inline">{:stop, reason}</code> will cause <code class="inline">start_link/3</code> to return
+<code class="inline">{:error, reason}</code> and the process to exit with reason <code class="inline">reason</code> without
+entering the loop or calling <code class="inline">c:terminate/2</code>.</p>
+<p>Callback implementation for <a href="https://hexdocs.pm/elixir/GenServer.html#c:init/1"><code class="inline">GenServer.init/1</code></a>.</p>
 
+  </section>
+</div>
+<div class="detail" id="send/4">
+  
+  
+  <div class="detail-header">
+    <a href="#send/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">send(pid, method_name, args, options)</span>
+    
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L204" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+    
+    
+    
+  </div>
+  <section class="docstring">
+    
+  </section>
+</div>
+<div class="detail" id="start_link/2">
+  
+  
+  <div class="detail-header">
+    <a href="#start_link/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">start_link(name, state)</span>
+    
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L184" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+    
+    
+    
+  </div>
+  <section class="docstring">
+    
   </section>
 </div>
 <div class="detail" id="tx_receipt/2">
@@ -314,9 +483,9 @@
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <span class="signature">tx_receipt(contract_agent, tx_hash)</span>
+    <span class="signature">tx_receipt(pid, tx_hash)</span>
     
-      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L216" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/hswick/exw3/blob/master/lib/exw3.ex#L208" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
