@@ -1,7 +1,7 @@
 language: elixir
 
 elixir:
-  - '1.1'
+  - '1.6.4'
 
 install:
   - sudo apt-get update
