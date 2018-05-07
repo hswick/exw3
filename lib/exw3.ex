@@ -8,6 +8,21 @@ defmodule ExW3 do
     |> Base.decode16!(case: :lower)
   end
 
+  @spec format_address(binary()) :: integer()
+  @doc "Converts an Ethereum address into a form that can be used by the ABI encoder"
+  def format_address(address) do
+    address
+    |> String.slice(2..-1)
+    |> Base.decode16!(case: :lower)
+    |> :binary.decode_unsigned
+  end
+
+  @spec to_address(binary()) :: binary()
+  @doc "Converts bytes to Ethereum address"
+  def to_address(bytes) do
+    Enum.join(["0x", bytes |> Base.encode16(case: :lower)], "")
+  end
+
   @spec accounts() :: list()
   @doc "returns all available accounts"
   def accounts do

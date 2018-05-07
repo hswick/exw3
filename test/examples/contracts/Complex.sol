@@ -9,7 +9,7 @@ contract Complex {
     event Bar(uint foo, address person);
     event FooBar(bool fooboo, uint foo, bytes32 foobar);
 
-    function Complex(uint _foo, bytes32 _foobar) public {
+    constructor(uint _foo, bytes32 _foobar) public {
         foo = _foo;
         foobar = _foobar;
     }

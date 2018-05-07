@@ -5,7 +5,7 @@
 ## Installation
 
         def deps do
-          [{:exw3, "~> 0.1.1"}]
+          [{:exw3, "~> 0.1.2"}]
         end
 
 ## Overview
@@ -78,4 +78,11 @@ iex(9)> ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(accounts, 0
 {:ok, "0xb7e9cbdd2cec8ca017e675059a3af063d754496c960f156e1a41fe51ea82f3b8"}
 iex(10)> ExW3.Contract.call(SimpleStorage, :get)                                
 {:ok, 1}
+```
+
+# Compiling Soldity
+
+To compile the test solidity contracts after making a change run this command:
+```
+solc --abi --bin --overwrite -o test/examples/build test/examples/contracts/*.sol
 ```

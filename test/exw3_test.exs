@@ -8,6 +8,7 @@ defmodule EXW3Test do
       array_tester_abi: ExW3.load_abi("test/examples/build/ArrayTester.abi"),
       event_tester_abi: ExW3.load_abi("test/examples/build/EventTester.abi"),
       complex_abi: ExW3.load_abi("test/examples/build/Complex.abi"),
+      address_tester_abi: ExW3.load_abi("test/examples/build/AddressTester.abi"),
       accounts: ExW3.accounts()
     }
   end
@@ -155,5 +156,31 @@ defmodule EXW3Test do
     assert foo == 42
 
     assert ExW3.bytes_to_string(foobar) == "Hello, world!"
+  end
+
+  test "starts a Contract GenServer for AddressTester contract", context do
+    ExW3.Contract.start_link(AddressTester, abi: context[:address_tester_abi])
+
+    {:ok, address} =
+      ExW3.Contract.deploy(
+        AddressTester,
+        bin: ExW3.load_bin("test/examples/build/AddressTester.bin"),
+        options: %{
+          from: Enum.at(context[:accounts], 0),
+          gas: 300_000
+        }
+      )
+
+    ExW3.Contract.at(AddressTester, address)
+
+    assert address == ExW3.Contract.address(AddressTester)
+
+    formatted_address =
+			Enum.at(context[:accounts], 0)
+			|> ExW3.format_address
+
+    {:ok, same_address} = ExW3.Contract.call(AddressTester, :get, [formatted_address])
+
+    assert ExW3.to_address(same_address) == Enum.at(context[:accounts], 0)
   end
 end
