@@ -23,6 +23,34 @@ defmodule ExW3 do
     Enum.join(["0x", bytes |> Base.encode16(case: :lower)], "")
   end
 
+	@spec to_checksum_address(binary()) :: binary()
+	@doc "returns a checksummed address"
+	def to_checksum_address(address) do
+    address = String.replace(address, ~r/^0x/, "")
+
+    {:ok, hash} = Ethereumex.HttpClient.web3_sha3(String.downcase(address))
+    non_prefix_hash = String.replace(hash, ~r/^0x/, "")
+    keccak_hash_list = non_prefix_hash
+    |> String.split("", trim: true)
+    |> Enum.map(fn (x) -> elem(Integer.parse(x, 16),0) end)
+
+    list_arr = for n <- 0..String.length(address)-1 do
+      number = Enum.at(keccak_hash_list, n)
+      cond do
+        number >= 8 -> String.upcase(String.at(address, n))
+        true -> String.downcase(String.at(address, n))
+      end
+    end
+
+    "0x" <> List.to_string(list_arr)
+  end
+	
+	@doc "checks if the address is a valid checksummed address"
+	@spec is_valid_checksum_address(binary()) :: boolean()
+  def is_valid_checksum_address(address) do
+    to_checksum_address(address) == address
+  end
+
   @spec accounts() :: list()
   @doc "returns all available accounts"
   def accounts do
