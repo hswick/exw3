@@ -28,9 +28,11 @@ defmodule ExW3 do
   def to_checksum_address(address) do
     address = String.replace(address, ~r/^0x/, "")
 
-    {:ok, hash} = Ethereumex.HttpClient.web3_sha3(String.downcase(address))
-    non_prefix_hash = String.replace(hash, ~r/^0x/, "")
-    keccak_hash_list = non_prefix_hash
+    hash = ExthCrypto.Hash.Keccak.kec(String.downcase(address))
+           |> Base.encode16(case: :lower)
+           |> String.replace(~r/^0x/, "")
+
+    keccak_hash_list = hash
     |> String.split("", trim: true)
     |> Enum.map(fn (x) -> elem(Integer.parse(x, 16),0) end)
 
