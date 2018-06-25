@@ -462,4 +462,74 @@ defmodule ExW3 do
       {:reply, {:ok, {receipt, formatted_logs}}, state}
     end
   end
+
+  defmodule Poller do
+    use GenServer
+
+    def start_link do
+      GenServer.start_link(__MODULE__, [], name: EventPoller)
+    end
+
+    def subscribe(event) do
+      GenServer.cast(EventPoller, {:subscribe, event})
+    end
+
+    @impl true
+    def init(state) do
+      schedule_work() # Schedule work to be performed on start
+      {:ok, state}
+    end
+
+    @impl true
+    def handle_cast({:subscribe, event}, state) do
+      {:noreply, [event | state]}
+    end
+
+    @impl true
+    def handle_info(:work, state) do
+      # Do the desired work here
+      Enum.each state, fn event ->
+	send EventListener, {:event, event, "Hello, World"}
+      end
+      
+      schedule_work() # Reschedule once more
+      {:noreply, state}
+    end
+
+    defp schedule_work() do
+      Process.send_after(self(), :work, 1000) # In 1 sec
+    end
+  end
+  
+  defmodule Listener do
+    def start_link do
+      Poller.start_link()
+      {:ok, pid} = Task.start_link(fn -> loop(%{}) end)
+      Process.register(pid, EventListener)
+      :ok
+    end
+
+    def subscribe(event, pid) do
+      Poller.subscribe(event)
+      send EventListener, {:subscribe, event, pid}
+    end
+
+    def listen(callback) do
+      receive do
+	{:event, result} -> apply callback, [result]
+      end
+      listen(callback)
+    end
+    
+    defp loop(map) do
+      receive do
+	{:subscribe, event, pid} ->
+	  loop(Map.put(map, event, pid))
+	{:event, event, data} ->
+	  send Map.get(map, event), {:event, {event, data}}
+	  loop(map)
+      end
+    end
+  end
+
 end
