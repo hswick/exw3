@@ -127,6 +127,30 @@ defmodule ExW3 do
     end
   end
 
+  @spec new_filter(%{}) :: binary()
+  @doc "Creates a new filter, returns filter id"
+  def new_filter(map) do
+    case Ethereumex.HttpClient.eth_new_filter(map) do
+      {:ok, filter_id} -> filter_id
+      err -> err
+    end
+  end
+
+  def get_filter_changes(filter_id) do
+    case Ethereumex.HttpClient.eth_get_filter_changes(filter_id) do
+      {:ok, changes} -> changes
+      err -> err
+    end
+  end
+
+  @spec uninstall_filter(binary()) :: boolean()
+  def uninstall_filter(filter_id) do
+    case Ethereumex.HttpClient.eth_uninstall_filter(filter_id) do
+      {:ok, result} -> result
+      err -> err
+    end
+  end
+
   @spec mine(integer()) :: any()
   @doc "Mines number of blocks specified. Default is 1"
   def mine(num_blocks \\ 1) do
