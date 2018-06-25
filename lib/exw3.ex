@@ -288,6 +288,75 @@ defmodule ExW3 do
     end
   end
 
+  defmodule Poller do
+    use GenServer
+
+    def start_link do
+      GenServer.start_link(__MODULE__, [], name: EventPoller)
+    end
+
+    def subscribe(filter_id) do
+      GenServer.cast(EventPoller, {:subscribe, filter_id})
+    end
+
+    @impl true
+    def init(state) do
+      schedule_work() # Schedule work to be performed on start
+      {:ok, state}
+    end
+
+    @impl true
+    def handle_cast({:subscribe, filter_id}, state) do
+      {:noreply, [filter_id | state]}
+    end
+
+    @impl true
+    def handle_info(:work, state) do
+      # Do the desired work here
+      Enum.each state, fn filter_id ->
+	send EventListener, {:event, filter_id, ExW3.get_filter_changes(filter_id)}
+      end
+      
+      schedule_work() # Reschedule once more
+      {:noreply, state}
+    end
+
+    defp schedule_work() do
+      Process.send_after(self(), :work, 1000) # In 1 sec
+    end
+  end
+  
+  defmodule Listener do
+    def start_link do
+      Poller.start_link()
+      {:ok, pid} = Task.start_link(fn -> loop(%{}) end)
+      Process.register(pid, EventListener)
+      :ok
+    end
+
+    def subscribe(filter_id, pid) do
+      Poller.subscribe(filter_id)
+      send EventListener, {:subscribe, filter_id, pid}
+    end
+
+    def listen(callback) do
+      receive do
+	{:event, result} -> apply callback, [result]
+      end
+      listen(callback)
+    end
+    
+    defp loop(map) do
+      receive do
+	{:subscribe, filter_id, pid} ->
+	  loop(Map.put(map, filter_id, pid))
+	{:event, filter_id, data} ->
+	  send Map.get(map, filter_id), {:event, {filter_id, data}}
+	  loop(map)
+      end
+    end
+  end
+
   defmodule Contract do
     use GenServer
 
@@ -335,11 +404,15 @@ defmodule ExW3 do
       GenServer.call(pid, {:tx_receipt, tx_hash})
     end
 
+    def subscribe(pid, event_name, other_pid, event_data \\ %{}) do
+      GenServer.call(pid, {:subscribe, {event_name, other_pid, event_data}})
+    end
+
     # Server
 
     def init(state) do
       if state[:abi] do
-        {:ok, [{:events, init_events(state[:abi])} | state]}
+	{:ok, state ++ init_events(state[:abi])}
       else
         raise "ABI not provided upon initialization"
       end
@@ -351,16 +424,28 @@ defmodule ExW3 do
           v["type"] == "event"
         end)
 
-      signature_types_map =
+      names_and_signature_types_map =
         Enum.map(events, fn {name, v} ->
           types = Enum.map(v["inputs"], &Map.get(&1, "type"))
           names = Enum.map(v["inputs"], &Map.get(&1, "name"))
           signature = Enum.join([name, "(", Enum.join(types, ","), ")"])
 
-          {"0x#{ExW3.encode_event(signature)}", %{signature: signature, names: names}}
+	  encoded_event_signature = "0x#{ExW3.encode_event(signature)}"
+
+          {{encoded_event_signature, %{signature: signature, names: names}}, {name, encoded_event_signature}}
         end)
 
-      Enum.into(signature_types_map, %{})
+      signature_types_map =
+	Enum.map(names_and_signature_types_map, fn {signature_types, _} ->
+	  signature_types
+	end)
+
+      names_map =
+	Enum.map(names_and_signature_types_map, fn {_, names} ->
+	  names
+	end)
+
+      [events: Enum.into(signature_types_map, %{}), event_names: Enum.into(names_map, %{})]
     end
 
     # Helpers
@@ -429,6 +514,13 @@ defmodule ExW3 do
       {:noreply, [{:address, address} | state]}
     end
 
+    def handle_call({:subscribe, {event_name, other_pid, event_data}}, _from, state) do
+      payload = Map.merge(%{address: state[:address], topics: [state[:event_names][event_name]]}, event_data)
+      filter_id = ExW3.new_filter(payload)
+      Listener.subscribe(filter_id, other_pid)
+      {:reply, filter_id, state ++ [event_name, filter_id]}
+    end
+
     # Calls
 
     def handle_call({:deploy, args}, _from, state) do
@@ -486,74 +578,5 @@ defmodule ExW3 do
       {:reply, {:ok, {receipt, formatted_logs}}, state}
     end
   end
-
-  defmodule Poller do
-    use GenServer
-
-    def start_link do
-      GenServer.start_link(__MODULE__, [], name: EventPoller)
-    end
-
-    def subscribe(event) do
-      GenServer.cast(EventPoller, {:subscribe, event})
-    end
-
-    @impl true
-    def init(state) do
-      schedule_work() # Schedule work to be performed on start
-      {:ok, state}
-    end
-
-    @impl true
-    def handle_cast({:subscribe, event}, state) do
-      {:noreply, [event | state]}
-    end
-
-    @impl true
-    def handle_info(:work, state) do
-      # Do the desired work here
-      Enum.each state, fn event ->
-	send EventListener, {:event, event, "Hello, World"}
-      end
-      
-      schedule_work() # Reschedule once more
-      {:noreply, state}
-    end
-
-    defp schedule_work() do
-      Process.send_after(self(), :work, 1000) # In 1 sec
-    end
-  end
   
-  defmodule Listener do
-    def start_link do
-      Poller.start_link()
-      {:ok, pid} = Task.start_link(fn -> loop(%{}) end)
-      Process.register(pid, EventListener)
-      :ok
-    end
-
-    def subscribe(event, pid) do
-      Poller.subscribe(event)
-      send EventListener, {:subscribe, event, pid}
-    end
-
-    def listen(callback) do
-      receive do
-	{:event, result} -> apply callback, [result]
-      end
-      listen(callback)
-    end
-    
-    defp loop(map) do
-      receive do
-	{:subscribe, event, pid} ->
-	  loop(Map.put(map, event, pid))
-	{:event, event, data} ->
-	  send Map.get(map, event), {:event, {event, data}}
-	  loop(map)
-      end
-    end
-  end
-
 end

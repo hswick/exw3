@@ -147,6 +147,10 @@ defmodule EXW3Test do
       )
 
     ExW3.Contract.at(EventTester, address)
+    
+    ExW3.Listener.start_link()
+
+    filter_id = ExW3.Contract.subscribe(EventTester, "Simple", self())
 
     {:ok, tx_hash} =
       ExW3.Contract.send(
@@ -156,14 +160,14 @@ defmodule EXW3Test do
 	%{from: Enum.at(context[:accounts], 0)}
       )
     
-    ExW3.Listener.start_link()
-
-    ExW3.Listener.subscribe("Hello", self())
-
     receive do
-      {:event, {"Frank", data}} -> IO.inspect data
-    after 3_000 -> raise "Never received event"
+      {:event, {filter_id, data}} ->
+	IO.inspect data
+    after 3_000 ->
+	raise "Never received event"
     end
+
+    ExW3.uninstall_filter(filter_id)
   end
 
   test "starts a Contract GenServer for Complex contract", context do
