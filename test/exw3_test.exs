@@ -45,6 +45,8 @@ defmodule EXW3Test do
     hash = ExW3.keccak256("foo")
     assert String.slice(hash, 0..1) == "0x"
 
+    assert hash == "0x41b1a0649752af1b28b3dc29a1556eee781e4a4c3a1f7f53f90fa834de098c4d"
+
     num_bytes =
       hash |>
       String.slice(2..-1) |>
