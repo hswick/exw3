@@ -334,9 +334,9 @@ defmodule ExW3 do
       :ok
     end
 
-    def filter(filter_id, event_signature, pid) do
+    def filter(filter_id, event_signature, event_fields, pid) do
       Poller.filter(filter_id)
-      send Listener, {:filter, filter_id, event_signature, pid}
+      send Listener, {:filter, filter_id, event_signature, event_fields, pid}
     end
 
     def listen(callback) do
@@ -348,15 +348,15 @@ defmodule ExW3 do
     
     defp loop(state) do
       receive do
-	{:filter, filter_id, event_signature, pid} ->
-	  loop(Map.put(state, filter_id, %{pid: pid, signature: event_signature}))
+	{:filter, filter_id, event_signature, event_fields, pid} ->
+	  loop(Map.put(state, filter_id, %{pid: pid, signature: event_signature, names: event_fields}))
 	{:event, filter_id, logs} ->
 	  filter_attributes = Map.get(state, filter_id)
 	  unless logs == [] do
 	    Enum.each(logs, fn log ->
 	      data = Map.get(log, "data")
-	      new_data = ExW3.decode_event(data, filter_attributes[:signature])
-	      new_log = Map.put(log, :data, new_data)
+	      new_data = Enum.zip(filter_attributes[:names], ExW3.decode_event(data, filter_attributes[:signature])) |> Enum.into(%{})
+	      new_log = Map.put(log, "data", new_data)
 	      send filter_attributes[:pid], {:event, {filter_id, new_log}}
 	    end)
 	  end
@@ -529,7 +529,8 @@ defmodule ExW3 do
       payload = Map.merge(%{address: state[:address], topics: [state[:event_names][event_name]]}, event_data)
       filter_id = ExW3.new_filter(payload)
       event_signature = state[:events][state[:event_names][event_name]][:signature]
-      EventListener.filter(filter_id, event_signature, other_pid)
+      event_fields = state[:events][state[:event_names][event_name]][:names]
+      EventListener.filter(filter_id, event_signature, event_fields, other_pid)
       {:reply, filter_id, state ++ [event_name, filter_id]}
     end
 

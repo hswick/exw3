@@ -170,7 +170,12 @@ defmodule EXW3Test do
     end
 
     state = Agent.get(agent, fn list -> list end)
-    assert Enum.at(state, 0) |> is_map
+    event_log = Enum.at(state, 0)
+    assert event_log |> is_map
+    log_data = Map.get(event_log, "data")
+    assert log_data |> is_map
+    assert Map.get(log_data, "num") == 42
+    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
 
     ExW3.uninstall_filter(filter_id)
   end
