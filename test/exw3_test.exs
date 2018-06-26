@@ -147,10 +147,12 @@ defmodule EXW3Test do
       )
 
     ExW3.Contract.at(EventTester, address)
-    
-    ExW3.Listener.start_link()
 
-    filter_id = ExW3.Contract.subscribe(EventTester, "Simple", self())
+    {:ok, agent} = Agent.start_link(fn -> [] end)
+  
+    ExW3.EventListener.start_link()
+
+    filter_id = ExW3.Contract.filter(EventTester, "Simple", self())
 
     {:ok, tx_hash} =
       ExW3.Contract.send(
@@ -159,13 +161,16 @@ defmodule EXW3Test do
 	["Hello, World!"],
 	%{from: Enum.at(context[:accounts], 0)}
       )
-    
+  
     receive do
       {:event, {filter_id, data}} ->
-	IO.inspect data
+	Agent.update(agent, fn list -> [data | list] end)	
     after 3_000 ->
 	raise "Never received event"
     end
+
+    state = Agent.get(agent, fn list -> list end)
+    assert Enum.at(state, 0) |> is_map
 
     ExW3.uninstall_filter(filter_id)
   end
