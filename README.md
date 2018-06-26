@@ -80,6 +80,50 @@ iex(10)> ExW3.Contract.call(SimpleStorage, :get)
 {:ok, 1}
 ```
 
+## Listening for Events
+
+Elixir doesn't have event listeners like say JS. However, we can simulate that behavior with message passing. The way ExW3 handles event filters, is that it starts a background process that will call eth_getFilterChanges every cycle. Whenever a change is detected it will send a message to the listener.
+
+```
+# Start the background listener
+ExW3.EventListener.start_link
+
+# Assuming we have already setup our contract called EventTester
+# We can then add a filter for the event listener to look out for
+# by passing in the event name, and the process we want to receive the messages when an event is triggered.
+# For now we are going to use the main process, however, we could pass in a pid of a different process.
+
+filter_id = ExW3.Contract.filter(EventTester, "Simple", self())
+
+# We can then wait for the event. Using the typical receive will wait for the first instance of the event, and then continue.
+# This is useful for testing.
+receive do
+  {:event, {filter_id, data}} -> IO.inspect data
+end
+
+# We can then uninstall the filter after we are done using it
+ExW3.uninstall_filter(filter_id)
+
+# ExW3 also provides a helper method to continuously listen for events. One use is to combine all of our filters and using pattern matching
+ExW3.EventListener.listen(fn result ->
+  case result do
+    {filter_id, data} -> IO.inspect data
+    {filter_id2, data} -> IO.inspect data
+  end
+end
+
+# The listen method is a simple receive loop waiting for `{:event, _}` messages.
+# It looks like this:
+    def listen(callback) do
+      receive do
+	{:event, result} -> apply callback, [result]
+      end
+      listen(callback)
+    end
+```
+
+# You could do something similar with your own process, whether it is a simple Task or a more involved GenServer.
+
 # Compiling Soldity
 
 To compile the test solidity contracts after making a change run this command:
