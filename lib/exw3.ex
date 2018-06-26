@@ -127,6 +127,30 @@ defmodule ExW3 do
     end
   end
 
+  @spec new_filter(%{}) :: binary()
+  @doc "Creates a new filter, returns filter id"
+  def new_filter(map) do
+    case Ethereumex.HttpClient.eth_new_filter(map) do
+      {:ok, filter_id} -> filter_id
+      err -> err
+    end
+  end
+
+  def get_filter_changes(filter_id) do
+    case Ethereumex.HttpClient.eth_get_filter_changes(filter_id) do
+      {:ok, changes} -> changes
+      err -> err
+    end
+  end
+
+  @spec uninstall_filter(binary()) :: boolean()
+  def uninstall_filter(filter_id) do
+    case Ethereumex.HttpClient.eth_uninstall_filter(filter_id) do
+      {:ok, result} -> result
+      err -> err
+    end
+  end
+
   @spec mine(integer()) :: any()
   @doc "Mines number of blocks specified. Default is 1"
   def mine(num_blocks \\ 1) do
@@ -264,6 +288,83 @@ defmodule ExW3 do
     end
   end
 
+  defmodule Poller do
+    use GenServer
+
+    def start_link do
+      GenServer.start_link(__MODULE__, [], name: EventPoller)
+    end
+
+    def filter(filter_id) do
+      GenServer.cast(EventPoller, {:filter, filter_id})
+    end
+
+    @impl true
+    def init(state) do
+      schedule_work() # Schedule work to be performed on start
+      {:ok, state}
+    end
+
+    @impl true
+    def handle_cast({:filter, filter_id}, state) do
+      {:noreply, [filter_id | state]}
+    end
+
+    @impl true
+    def handle_info(:work, state) do
+      # Do the desired work here
+      Enum.each state, fn filter_id ->
+	send Listener, {:event, filter_id, ExW3.get_filter_changes(filter_id)}
+      end
+      
+      schedule_work() # Reschedule once more
+      {:noreply, state}
+    end
+
+    defp schedule_work() do
+      Process.send_after(self(), :work, 500) # In 1/2 sec
+    end
+  end
+  
+  defmodule EventListener do
+    def start_link do
+      Poller.start_link()
+      {:ok, pid} = Task.start_link(fn -> loop(%{}) end)
+      Process.register(pid, Listener)
+      :ok
+    end
+
+    def filter(filter_id, event_signature, pid) do
+      Poller.filter(filter_id)
+      send Listener, {:filter, filter_id, event_signature, pid}
+    end
+
+    def listen(callback) do
+      receive do
+	{:event, result} -> apply callback, [result]
+      end
+      listen(callback)
+    end
+    
+    defp loop(state) do
+      receive do
+	{:filter, filter_id, event_signature, pid} ->
+	  loop(Map.put(state, filter_id, %{pid: pid, signature: event_signature}))
+	{:event, filter_id, logs} ->
+	  filter_attributes = Map.get(state, filter_id)
+	  unless logs == [] do
+	    Enum.each(logs, fn log ->
+	      data = Map.get(log, "data")
+	      new_data = ExW3.decode_event(data, filter_attributes[:signature])
+	      new_log = Map.put(log, :data, new_data)
+	      send filter_attributes[:pid], {:event, {filter_id, new_log}}
+	    end)
+	  end
+	  loop(state)
+      end
+    end
+  end
+
   defmodule Contract do
     use GenServer
 
@@ -311,11 +412,15 @@ defmodule ExW3 do
       GenServer.call(pid, {:tx_receipt, tx_hash})
     end
 
+    def filter(pid, event_name, other_pid, event_data \\ %{}) do
+      GenServer.call(pid, {:filter, {event_name, other_pid, event_data}})
+    end
+
     # Server
 
     def init(state) do
       if state[:abi] do
-        {:ok, [{:events, init_events(state[:abi])} | state]}
+	{:ok, state ++ init_events(state[:abi])}
       else
         raise "ABI not provided upon initialization"
       end
@@ -327,16 +432,28 @@ defmodule ExW3 do
           v["type"] == "event"
         end)
 
-      signature_types_map =
+      names_and_signature_types_map =
         Enum.map(events, fn {name, v} ->
           types = Enum.map(v["inputs"], &Map.get(&1, "type"))
           names = Enum.map(v["inputs"], &Map.get(&1, "name"))
           signature = Enum.join([name, "(", Enum.join(types, ","), ")"])
 
-          {"0x#{ExW3.encode_event(signature)}", %{signature: signature, names: names}}
+	  encoded_event_signature = "0x#{ExW3.encode_event(signature)}"
+
+          {{encoded_event_signature, %{signature: signature, names: names}}, {name, encoded_event_signature}}
         end)
 
-      Enum.into(signature_types_map, %{})
+      signature_types_map =
+	Enum.map(names_and_signature_types_map, fn {signature_types, _} ->
+	  signature_types
+	end)
+
+      names_map =
+	Enum.map(names_and_signature_types_map, fn {_, names} ->
+	  names
+	end)
+
+      [events: Enum.into(signature_types_map, %{}), event_names: Enum.into(names_map, %{})]
     end
 
     # Helpers
@@ -405,6 +522,17 @@ defmodule ExW3 do
       {:noreply, [{:address, address} | state]}
     end
 
+    def handle_call({:filter, {event_name, other_pid, event_data}}, _from, state) do
+      unless Process.whereis(Listener) do
+	raise "EventListener process not alive. Call ExW3.EventListener.start_link before using ExW3.Contract.subscribe"
+      end
+      payload = Map.merge(%{address: state[:address], topics: [state[:event_names][event_name]]}, event_data)
+      filter_id = ExW3.new_filter(payload)
+      event_signature = state[:events][state[:event_names][event_name]][:signature]
+      EventListener.filter(filter_id, event_signature, other_pid)
+      {:reply, filter_id, state ++ [event_name, filter_id]}
+    end
+
     # Calls
 
     def handle_call({:deploy, args}, _from, state) do
@@ -462,4 +590,5 @@ defmodule ExW3 do
       {:reply, {:ok, {receipt, formatted_logs}}, state}
     end
   end
+  
 end

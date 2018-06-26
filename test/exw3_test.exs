@@ -133,6 +133,48 @@ defmodule EXW3Test do
     assert data == "Hello, World!"
   end
 
+  test "starts a Contract GenServer and uses the event listener", context do
+    ExW3.Contract.start_link(EventTester, abi: context[:event_tester_abi])
+
+    {:ok, address} =
+      ExW3.Contract.deploy(
+        EventTester,
+        bin: ExW3.load_bin("test/examples/build/EventTester.bin"),
+        options: %{
+          gas: 300_000,
+          from: Enum.at(context[:accounts], 0)
+        }
+      )
+
+    ExW3.Contract.at(EventTester, address)
+
+    {:ok, agent} = Agent.start_link(fn -> [] end)
+  
+    ExW3.EventListener.start_link()
+
+    filter_id = ExW3.Contract.filter(EventTester, "Simple", self())
+
+    {:ok, tx_hash} =
+      ExW3.Contract.send(
+	EventTester,
+	:simple,
+	["Hello, World!"],
+	%{from: Enum.at(context[:accounts], 0)}
+      )
+  
+    receive do
+      {:event, {filter_id, data}} ->
+	Agent.update(agent, fn list -> [data | list] end)	
+    after 3_000 ->
+	raise "Never received event"
+    end
+
+    state = Agent.get(agent, fn list -> list end)
+    assert Enum.at(state, 0) |> is_map
+
+    ExW3.uninstall_filter(filter_id)
+  end
+
   test "starts a Contract GenServer for Complex contract", context do
     ExW3.Contract.start_link(Complex, abi: context[:complex_abi])
 
@@ -217,4 +259,3 @@ defmodule EXW3Test do
     assert ExW3.is_valid_checksum_address("0x2f015c60e0be116b1f0cd534704db9c92118fb6a") == false
   end
 end
-  
