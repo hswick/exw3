@@ -82,7 +82,9 @@ iex(10)> ExW3.Contract.call(SimpleStorage, :get)
 
 ## Listening for Events
 
-Elixir doesn't have event listeners like say JS. However, we can simulate that behavior with message passing. The way ExW3 handles event filters, is that it starts a background process that will call eth_getFilterChanges every cycle. Whenever a change is detected it will send a message to the listener.
+Elixir doesn't have event listeners like say JS. However, we can simulate that behavior with message passing.
+The way ExW3 handles event filters is with a background process that calls eth_getFilterChanges every cycle.
+Whenever a change is detected it will send a message to whichever process is listening.
 
 ```elixir
 # Start the background listener
@@ -95,8 +97,8 @@ ExW3.EventListener.start_link
 
 filter_id = ExW3.Contract.filter(EventTester, "Simple", self())
 
-# We can then wait for the event. Using the typical receive will wait for the first instance of the event, and then continue.
-# This is useful for testing.
+# We can then wait for the event. Using the typical receive keyword we wait for the first instance
+# of the event, and then continue with the rest of the code. This is useful for testing.
 receive do
   {:event, {filter_id, data}} -> IO.inspect data
 end
@@ -104,7 +106,8 @@ end
 # We can then uninstall the filter after we are done using it
 ExW3.uninstall_filter(filter_id)
 
-# ExW3 also provides a helper method to continuously listen for events. One use is to combine all of our filters and using pattern matching
+# ExW3 also provides a helper method to continuously listen for events.
+# One use is to combine all of our filters with pattern matching
 ExW3.EventListener.listen(fn result ->
   case result do
     {filter_id, data} -> IO.inspect data
