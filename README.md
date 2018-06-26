@@ -84,7 +84,7 @@ iex(10)> ExW3.Contract.call(SimpleStorage, :get)
 
 Elixir doesn't have event listeners like say JS. However, we can simulate that behavior with message passing. The way ExW3 handles event filters, is that it starts a background process that will call eth_getFilterChanges every cycle. Whenever a change is detected it will send a message to the listener.
 
-```
+```elixir
 # Start the background listener
 ExW3.EventListener.start_link
 
@@ -114,12 +114,12 @@ end
 
 # The listen method is a simple receive loop waiting for `{:event, _}` messages.
 # It looks like this:
-    def listen(callback) do
-      receive do
-	{:event, result} -> apply callback, [result]
-      end
-      listen(callback)
-    end
+def listen(callback) do
+  receive do
+    {:event, result} -> apply callback, [result]
+  end
+  listen(callback)
+end
 ```
 
 # You could do something similar with your own process, whether it is a simple Task or a more involved GenServer.
