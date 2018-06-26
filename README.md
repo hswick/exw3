@@ -120,9 +120,11 @@ def listen(callback) do
   end
   listen(callback)
 end
-```
 
 # You could do something similar with your own process, whether it is a simple Task or a more involved GenServer.
+```
+
+
 
 # Compiling Soldity
 
