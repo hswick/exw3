@@ -352,12 +352,14 @@ defmodule ExW3 do
 	  loop(Map.put(state, filter_id, %{pid: pid, signature: event_signature}))
 	{:event, filter_id, logs} ->
 	  filter_attributes = Map.get(state, filter_id)
-	  Enum.each(logs, fn log ->
-	    data = Map.get(log, "data")
-	    new_data = ExW3.decode_event(data, filter_attributes[:signature])
-	    new_log = Map.put(log, :data, new_data)
-	    send filter_attributes[:pid], {:event, {filter_id, new_log}}
-	  end)
+	  unless logs == [] do
+	    Enum.each(logs, fn log ->
+	      data = Map.get(log, "data")
+	      new_data = ExW3.decode_event(data, filter_attributes[:signature])
+	      new_log = Map.put(log, :data, new_data)
+	      send filter_attributes[:pid], {:event, {filter_id, new_log}}
+	    end)
+	  end
 	  loop(state)
       end
     end
