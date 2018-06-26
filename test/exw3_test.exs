@@ -41,6 +41,18 @@ defmodule EXW3Test do
     assert ExW3.block_number() == block_number + 5
   end
 
+  test "keccak256 hash some data" do
+    hash = ExW3.keccak256("foo")
+    assert String.slice(hash, 0..1) == "0x"
+
+    num_bytes =
+      hash |>
+      String.slice(2..-1) |>
+      byte_size
+
+    assert trunc(num_bytes / 2) == 32
+  end
+
   test "starts a Contract GenServer for simple storage contract", context do
     ExW3.Contract.start_link(SimpleStorage, abi: context[:simple_storage_abi])
 

@@ -1,4 +1,11 @@
 defmodule ExW3 do
+
+  @spec keccak256(binary()) :: binary()
+  @doc "Returns a 0x prepended 32 byte hash of the input string"
+  def keccak256(string) do
+    Enum.join(["0x", ExthCrypto.Hash.Keccak.kec(string) |> Base.encode16(case: :lower)], "")
+  end
+  
   @spec bytes_to_string(binary()) :: binary()
   @doc "converts Ethereum style bytes to string"
   def bytes_to_string(bytes) do
