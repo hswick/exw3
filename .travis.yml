@@ -5,7 +5,7 @@ elixir:
 
 install:
   - sudo apt-get update
-  - sudo apt-get install nodejs npm
+  - bash travis-install.sh
   - npm install -g ganache-cli@6.1.3
   - mix local.rebar --force # for Elixir 1.3.0 and up
   - mix local.hex --force

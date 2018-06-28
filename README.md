@@ -19,6 +19,20 @@ Ensure you have an ethereum node to connect to at the specified url in your conf
 ganache-cli
 ```
 
+Or you can use parity:
+Install Parity, then run it with
+
+```
+echo > passfile
+parity --chain dev --unlock=0x00a329c0648769a73afac7f9381e08fb43dbea72 --reseal-min-period 0 --password passfile
+```
+
+If Parity complains about password or missing account, try
+
+```
+parity --chain dev --unlock=0x00a329c0648769a73afac7f9381e08fb43dbea72
+```
+
 Make sure your config includes:
 ```elixir
 config :ethereumex,
