@@ -485,10 +485,12 @@ defmodule ExW3 do
           bin
         end
 
+      gas = ExW3.encode_data("(uint)", [args[:options][:gas]]) |> Base.encode16(case: :lower)
+
       tx = %{
         from: args[:options][:from],
-        data: constructor_arg_data,
-        gas: args[:options][:gas]
+        data: "0x#{constructor_arg_data}",
+        gas: "0x#{gas}"
       }
 
       {:ok, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
@@ -502,7 +504,7 @@ defmodule ExW3 do
       result =
         Ethereumex.HttpClient.eth_call(%{
           to: address,
-          data: ExW3.encode_method_call(abi, method_name, args)
+          data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
         })
 
       case result do
@@ -512,13 +514,14 @@ defmodule ExW3 do
     end
 
     def eth_send_helper(address, abi, method_name, args, options) do
+      gas = ExW3.encode_data("(uint)", [options[:gas]]) |> Base.encode16(case: :lower)
       Ethereumex.HttpClient.eth_send_transaction(
         Map.merge(
           %{
             to: address,
-            data: ExW3.encode_method_call(abi, method_name, args)
+            data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
           },
-          options
+          Map.put(options, :gas, "0x#{gas}")
         )
       )
     end
