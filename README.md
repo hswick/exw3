@@ -19,6 +19,20 @@ Ensure you have an ethereum node to connect to at the specified url in your conf
 ganache-cli
 ```
 
+Or you can use parity:
+Install Parity, then run it with
+
+```
+echo > passfile
+parity --chain dev --unlock=0x00a329c0648769a73afac7f9381e08fb43dbea72 --reseal-min-period 0 --password passfile
+```
+
+If Parity complains about password or missing account, try
+
+```
+parity --chain dev --unlock=0x00a329c0648769a73afac7f9381e08fb43dbea72
+```
+
 Make sure your config includes:
 ```elixir
 config :ethereumex,
@@ -68,13 +82,13 @@ iex(4)> simple_storage_abi = ExW3.load_abi("test/examples/build/SimpleStorage.ab
 }
 iex(5)> ExW3.Contract.start_link(SimpleStorage, abi: simple_storage_abi)
 {:ok, #PID<0.239.0>}
-iex(6)> {:ok, address} = ExW3.Contract.deploy(SimpleStorage, bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"), options: %{gas: 300000, from: Enum.at(accounts, 0)})
+iex(6)> {:ok, address} = ExW3.Contract.deploy(SimpleStorage, bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"), options: %{gas: 300_000, from: Enum.at(accounts, 0)})
 {:ok, "0xd99306b81bd61cb0ecdd3f2c946af513b3395088"}
 iex(7)> ExW3.Contract.at(SimpleStorage, address)
 :ok
 iex(8)> ExW3.Contract.call(SimpleStorage, :get)
 {:ok, 0}
-iex(9)> ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(accounts, 0)})
+iex(9)> ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(accounts, 0), gas: 50_000})
 {:ok, "0xb7e9cbdd2cec8ca017e675059a3af063d754496c960f156e1a41fe51ea82f3b8"}
 iex(10)> ExW3.Contract.call(SimpleStorage, :get)                                
 {:ok, 1}
