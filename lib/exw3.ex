@@ -564,11 +564,11 @@ defmodule ExW3 do
 
     def handle_call({:deploy, args}, _from, state) do
       case {args[:options][:from], args[:options][:gas]} do
-        {nil, _} -> {:reply, {:error, "transaction sender not provided"}, state}
-        {_, nil} -> {:reply, {:error, "gas amount not provided"}, state}
+        {nil, _} -> {:reply, {:error, :missing_sender}, state}
+        {_, nil} -> {:reply, {:error, :missing_gas}, state}
         {_, _} ->
           case {args[:bin], state[:bin]} do
-            {nil, nil} -> {:reply, {:error, "contract binary was never provided"}, state}
+            {nil, nil} -> {:reply, {:error, :missing_binary}, state}
             {bin, nil} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
             {nil, bin} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
           end
@@ -586,18 +586,18 @@ defmodule ExW3 do
         result = eth_call_helper(address, state[:abi], Atom.to_string(method_name), args)
         {:reply, result, state}
       else
-        {:reply, {:error, "contract address not available"}, state}
+        {:reply, {:error, :missing_address}, state}
       end
     end
 
     def handle_call({:send, {method_name, args, options}}, _from, state) do
       case {state[:address], options[:from], options[:gas]} do
         {nil, _, _} ->
-          {:reply, {:error, "contract address not available"}, state}
+          {:reply, {:error, :missing_address}, state}
         {_, nil, _} ->
-          {:reply, {:error, "transaction sender not provided"}, state}
+          {:reply, {:error, :missing_sender}, state}
         {_, _, nil} ->
-          {:reply, {:error, "gas amount not provided"}, state}
+          {:reply, {:error, :missing_gas}, state}
         {address, _, _} ->
           {
             :reply,
