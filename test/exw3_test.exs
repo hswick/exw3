@@ -280,4 +280,65 @@ defmodule EXW3Test do
   test "returns invalid check for is_valid_checksum_address()" do
     assert ExW3.is_valid_checksum_address("0x2f015c60e0be116b1f0cd534704db9c92118fb6a") == false
   end
+
+  test "returns proper error messages at contract deployment", context do
+
+    ExW3.Contract.start_link(SimpleStorage, abi: context[:simple_storage_abi])
+
+    assert {:error, :missing_gas} ==
+      ExW3.Contract.deploy(
+        SimpleStorage,
+        bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+        args: [],
+        options: %{
+          from: Enum.at(context[:accounts], 0)
+        }
+      )
+
+    assert {:error, :missing_sender} ==
+             ExW3.Contract.deploy(
+               SimpleStorage,
+               bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+               args: [],
+               options: %{
+                 gas: 300_000,
+               }
+             )
+
+    assert {:error, :missing_binary} ==
+             ExW3.Contract.deploy(
+               SimpleStorage,
+               args: [],
+               options: %{
+                 gas: 300_000,
+                 from: Enum.at(context[:accounts], 0)
+               }
+             )
+
+  end
+
+  test "return proper error messages at send and call", context do
+    ExW3.Contract.start_link(SimpleStorage, abi: context[:simple_storage_abi])
+
+    {:ok, address} =
+      ExW3.Contract.deploy(
+        SimpleStorage,
+        bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+        args: [],
+        options: %{
+          gas: 300_000,
+          from: Enum.at(context[:accounts], 0)
+        }
+      )
+
+    assert {:error, :missing_address} == ExW3.Contract.call(SimpleStorage, :get)
+    assert {:error, :missing_address} == ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0), gas: 50_000})
+
+    ExW3.Contract.at(SimpleStorage, address)
+
+    assert {:error, :missing_sender} == ExW3.Contract.send(SimpleStorage, :set, [1], %{gas: 50_000})
+    assert {:error, :missing_gas} == ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
+
+  end
+
 end

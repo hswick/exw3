@@ -542,6 +542,21 @@ defmodule ExW3 do
     end
 
 
+    # Options' checkers
+
+    defp check_option(nil, error_atom), do: {:error, error_atom}
+
+    defp check_option([], error_atom), do: {:error, error_atom}
+    defp check_option([head | tail], atom) do
+      if head do
+        {:ok, head}
+      else
+        check_option(tail, atom)
+      end
+    end
+
+    defp check_option(value, _atom), do: {:ok, value}
+
     # Casts
 
     def handle_cast({:at, address}, state) do
@@ -563,16 +578,14 @@ defmodule ExW3 do
     # Calls
 
     def handle_call({:deploy, args}, _from, state) do
-      case {args[:options][:from], args[:options][:gas]} do
-        {nil, _} -> {:reply, {:error, :missing_sender}, state}
-        {_, nil} -> {:reply, {:error, :missing_gas}, state}
-        {_, _} ->
-          case {args[:bin], state[:bin]} do
-            {nil, nil} -> {:reply, {:error, :missing_binary}, state}
-            {bin, nil} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
-            {nil, bin} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
-          end
-      end
+      with {:ok, _} <- check_option(args[:options][:from], :missing_sender),
+           {:ok,_} <- check_option(args[:options][:gas], :missing_gas),
+           {:ok, bin} <- check_option([state[:bin], args[:bin]], :missing_binary)
+       do
+        {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
+       else
+         err -> {:reply, err, state}
+       end
     end
 
     def handle_call(:address, _from, state) do
@@ -580,30 +593,22 @@ defmodule ExW3 do
     end
 
     def handle_call({:call, {method_name, args}}, _from, state) do
-      address = state[:address]
-
-      if address do
-        result = eth_call_helper(address, state[:abi], Atom.to_string(method_name), args)
-        {:reply, result, state}
-      else
-        {:reply, {:error, :missing_address}, state}
+      with {:ok, address} <- check_option(state[:address], :missing_address)
+        do
+         {:reply, eth_call_helper(address, state[:abi], Atom.to_string(method_name), args), state}
+        else
+         err -> {:reply, err, state}
       end
     end
 
     def handle_call({:send, {method_name, args, options}}, _from, state) do
-      case {state[:address], options[:from], options[:gas]} do
-        {nil, _, _} ->
-          {:reply, {:error, :missing_address}, state}
-        {_, nil, _} ->
-          {:reply, {:error, :missing_sender}, state}
-        {_, _, nil} ->
-          {:reply, {:error, :missing_gas}, state}
-        {address, _, _} ->
-          {
-            :reply,
-            eth_send_helper(address, state[:abi], Atom.to_string(method_name), args, options),
-            state
-          }
+      with {:ok, address} <- check_option(state[:address], :missing_address),
+           {:ok, _} <- check_option(options[:from], :missing_sender),
+           {:ok, _} <- check_option(options[:gas], :missing_gas)
+        do
+          {:reply, eth_send_helper(address, state[:abi], Atom.to_string(method_name), args, options), state}
+        else
+          err -> {:reply, err, state}
       end
     end
 
