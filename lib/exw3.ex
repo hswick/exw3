@@ -303,8 +303,8 @@ defmodule ExW3 do
 
   defp map_abi(x) do
     case {x["name"], x["type"]} do
-      {nil, "constructor"} -> {"constructor", x}
-      {nil, "fallback"} -> {"fallback", x}
+      {nil, "constructor"} -> {:constructor, x}
+      {nil, "fallback"} -> {:fallback, x}
       {name, _} -> {name, x}
     end
   end
