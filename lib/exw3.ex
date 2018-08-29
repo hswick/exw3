@@ -541,6 +541,7 @@ defmodule ExW3 do
       )
     end
 
+
     # Casts
 
     def handle_cast({:at, address}, state) do
@@ -562,10 +563,15 @@ defmodule ExW3 do
     # Calls
 
     def handle_call({:deploy, args}, _from, state) do
-      case {args[:bin], state[:bin]} do
-        {nil, nil} -> {:reply, {:error, "contract binary was never provided"}, state}
-        {bin, nil} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
-        {nil, bin} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
+      case {args[:options][:from], args[:options][:gas]} do
+        {nil, _} -> {:reply, {:error, "transaction sender not provided"}, state}
+        {_, nil} -> {:reply, {:error, "gas amount not provided"}, state}
+        {_, _} ->
+          case {args[:bin], state[:bin]} do
+            {nil, nil} -> {:reply, {:error, "contract binary was never provided"}, state}
+            {bin, nil} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
+            {nil, bin} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
+          end
       end
     end
 
@@ -585,13 +591,19 @@ defmodule ExW3 do
     end
 
     def handle_call({:send, {method_name, args, options}}, _from, state) do
-      address = state[:address]
-
-      if address do
-        result = eth_send_helper(address, state[:abi], Atom.to_string(method_name), args, options)
-        {:reply, result, state}
-      else
-        {:reply, {:error, "contract address not available"}, state}
+      case {state[:address], options[:from], options[:gas]} do
+        {nil, _, _} ->
+          {:reply, {:error, "contract address not available"}, state}
+        {_, nil, _} ->
+          {:reply, {:error, "transaction sender not provided"}, state}
+        {_, _, nil} ->
+          {:reply, {:error, "gas amount not provided"}, state}
+        {address, _, _} ->
+          {
+            :reply,
+            eth_send_helper(address, state[:abi], Atom.to_string(method_name), args, options),
+            state
+          }
       end
     end
 
