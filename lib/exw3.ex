@@ -476,7 +476,7 @@ defmodule ExW3 do
 
     def deploy_helper(bin, abi, args) do
       constructor_arg_data =
-        if args[:args] do
+        if arguments = args[:args] do
           constructor_abi =
             Enum.find(abi, fn {_, v} ->
               v["type"] == "constructor"
@@ -486,8 +486,14 @@ defmodule ExW3 do
             {_, constructor} = constructor_abi
             input_types = Enum.map(constructor["inputs"], fn x -> x["type"] end)
             types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
-            bin <> (ExW3.encode_data(types_signature, args[:args]) |> Base.encode16(case: :lower))
+
+            if Enum.count(input_types) != Enum.count(arguments) do
+                IO.warn("Number of provided arguments is invalid")
+            end
+
+            bin <> (ExW3.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
           else
+            IO.warn("Could not find a constructor")
             bin
           end
         else
