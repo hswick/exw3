@@ -188,16 +188,11 @@ defmodule ExW3 do
   @spec reformat_abi([]) :: %{}
   @doc "Reformats abi from list to map with event and function names as keys"
   def reformat_abi(abi) do
-    Map.new(Enum.map(
-      abi,
-      fn x ->
-        case {x["name"], x["type"]} do
-          {nil, "constructor"} -> {"constructor", x}
-          {nil, "fallback"} -> {"fallback", x}
-          {name, _} -> {x["name"], x}
-        end
-      end
-    ))
+
+    abi
+    |> Enum.map(&map_abi/1)
+    |> Map.new
+
   end
 
   @spec load_abi(binary()) :: []
@@ -301,6 +296,16 @@ defmodule ExW3 do
       encoded_input |> Base.encode16(case: :lower)
     else
       raise "#{name} method not found with the given abi"
+    end
+  end
+
+  # ABI mapper
+
+  defp map_abi(x) do
+    case {x["name"], x["type"]} do
+      {nil, "constructor"} -> {"constructor", x}
+      {nil, "fallback"} -> {"fallback", x}
+      {name, _} -> {name, x}
     end
   end
 
