@@ -45,4 +45,7 @@ contract Complex {
     function setBarFoo(bool _barFoo) public {
         barFoo = _barFoo;
     }
+
+    function() public payable { }
+
 }

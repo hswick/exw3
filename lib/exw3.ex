@@ -188,7 +188,16 @@ defmodule ExW3 do
   @spec reformat_abi([]) :: %{}
   @doc "Reformats abi from list to map with event and function names as keys"
   def reformat_abi(abi) do
-    Map.new(Enum.map(abi, fn x -> {x["name"], x} end))
+    Map.new(Enum.map(
+      abi,
+      fn x ->
+        case {x["name"], x["type"]} do
+          {nil, "constructor"} -> {"constructor", x}
+          {nil, "fallback"} -> {"fallback", x}
+          {name, _} -> {x["name"], x}
+        end
+      end
+    ))
   end
 
   @spec load_abi(binary()) :: []
