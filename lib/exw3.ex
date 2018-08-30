@@ -493,11 +493,11 @@ defmodule ExW3 do
         gas: "0x#{gas}"
       }
 
-      {:ok, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
+      {:ok, tx_hash} = Ethereumex.HttpClient.eth_send_transaction(tx)
 
-      {:ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_receipt_id)
+      {:ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_hash)
 
-      tx_receipt["contractAddress"]
+      {tx_receipt["contractAddress"], tx_hash}
     end
 
     def eth_call_helper(address, abi, method_name, args) do
@@ -526,6 +526,15 @@ defmodule ExW3 do
       )
     end
 
+
+    # Options' checkers
+
+    defp check_option(nil, error_atom), do: {:error, error_atom}
+    defp check_option([], error_atom), do: {:error, error_atom}
+    defp check_option([head | tail], atom) when head != nil,  do: {:ok, head}
+    defp check_option([_head | tail], atom), do: check_option(tail, atom)
+    defp check_option(value, _atom), do: {:ok, value}
+
     # Casts
 
     def handle_cast({:at, address}, state) do
@@ -547,11 +556,14 @@ defmodule ExW3 do
     # Calls
 
     def handle_call({:deploy, args}, _from, state) do
-      case {args[:bin], state[:bin]} do
-        {nil, nil} -> {:reply, {:error, "contract binary was never provided"}, state}
-        {bin, nil} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
-        {nil, bin} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
-      end
+      with {:ok, bin} <- check_option([state[:bin], args[:bin]], :missing_binary)
+       do
+        {contract_addr, tx_hash} = deploy_helper(bin, state[:abi], args)
+         result = {:ok, contract_addr, tx_hash}
+        {:reply, result , state}
+       else
+         err -> {:reply, err, state}
+       end
     end
 
     def handle_call(:address, _from, state) do
