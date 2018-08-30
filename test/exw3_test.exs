@@ -60,7 +60,7 @@ defmodule EXW3Test do
   test "starts a Contract GenServer for simple storage contract", context do
     ExW3.Contract.start_link(SimpleStorage, abi: context[:simple_storage_abi])
 
-    {:ok, address} =
+    {:ok, address, _} =
       ExW3.Contract.deploy(
         SimpleStorage,
         bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
@@ -89,7 +89,7 @@ defmodule EXW3Test do
   test "starts a Contract GenServer for array tester contract", context do
     ExW3.Contract.start_link(ArrayTester, abi: context[:array_tester_abi])
 
-    {:ok, address} =
+    {:ok, address, _} =
       ExW3.Contract.deploy(
         ArrayTester,
         bin: ExW3.load_bin("test/examples/build/ArrayTester.bin"),
@@ -117,7 +117,7 @@ defmodule EXW3Test do
   test "starts a Contract GenServer for event tester contract", context do
     ExW3.Contract.start_link(EventTester, abi: context[:event_tester_abi])
 
-    {:ok, address} =
+    {:ok, address, _} =
       ExW3.Contract.deploy(
         EventTester,
         bin: ExW3.load_bin("test/examples/build/EventTester.bin"),
@@ -153,7 +153,7 @@ defmodule EXW3Test do
   test "starts a Contract GenServer and uses the event listener", context do
     ExW3.Contract.start_link(EventTester, abi: context[:event_tester_abi])
 
-    {:ok, address} =
+    {:ok, address, _} =
       ExW3.Contract.deploy(
         EventTester,
         bin: ExW3.load_bin("test/examples/build/EventTester.bin"),
@@ -200,7 +200,7 @@ defmodule EXW3Test do
   test "starts a Contract GenServer for Complex contract", context do
     ExW3.Contract.start_link(Complex, abi: context[:complex_abi])
 
-    {:ok, address} =
+    {:ok, address, _} =
       ExW3.Contract.deploy(
         Complex,
         bin: ExW3.load_bin("test/examples/build/Complex.bin"),
@@ -225,7 +225,7 @@ defmodule EXW3Test do
   test "starts a Contract GenServer for AddressTester contract", context do
     ExW3.Contract.start_link(AddressTester, abi: context[:address_tester_abi])
 
-    {:ok, address} =
+    {:ok, address, _} =
       ExW3.Contract.deploy(
         AddressTester,
         bin: ExW3.load_bin("test/examples/build/AddressTester.bin"),
@@ -320,7 +320,7 @@ defmodule EXW3Test do
   test "return proper error messages at send and call", context do
     ExW3.Contract.start_link(SimpleStorage, abi: context[:simple_storage_abi])
 
-    {:ok, address} =
+    {:ok, address, _} =
       ExW3.Contract.deploy(
         SimpleStorage,
         bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
