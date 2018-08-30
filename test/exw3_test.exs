@@ -171,7 +171,7 @@ defmodule EXW3Test do
 
     filter_id = ExW3.Contract.filter(EventTester, "Simple", self())
 
-    {:ok, tx_hash} =
+    {:ok, _tx_hash} =
       ExW3.Contract.send(
 	EventTester,
 	:simple,
@@ -180,7 +180,7 @@ defmodule EXW3Test do
       )
   
     receive do
-      {:event, {filter_id, data}} ->
+      {:event, {_filter_id, data}} ->
 	Agent.update(agent, fn list -> [data | list] end)	
     after 3_000 ->
 	raise "Never received event"
