@@ -188,7 +188,11 @@ defmodule ExW3 do
   @spec reformat_abi([]) :: %{}
   @doc "Reformats abi from list to map with event and function names as keys"
   def reformat_abi(abi) do
-    Map.new(Enum.map(abi, fn x -> {x["name"], x} end))
+
+    abi
+    |> Enum.map(&map_abi/1)
+    |> Map.new
+
   end
 
   @spec load_abi(binary()) :: []
@@ -292,6 +296,16 @@ defmodule ExW3 do
       encoded_input |> Base.encode16(case: :lower)
     else
       raise "#{name} method not found with the given abi"
+    end
+  end
+
+  # ABI mapper
+
+  defp map_abi(x) do
+    case {x["name"], x["type"]} do
+      {nil, "constructor"} -> {:constructor, x}
+      {nil, "fallback"} -> {:fallback, x}
+      {name, _} -> {name, x}
     end
   end
 
@@ -467,7 +481,7 @@ defmodule ExW3 do
 
     def deploy_helper(bin, abi, args) do
       constructor_arg_data =
-        if args[:args] do
+        if arguments = args[:args] do
           constructor_abi =
             Enum.find(abi, fn {_, v} ->
               v["type"] == "constructor"
@@ -477,8 +491,14 @@ defmodule ExW3 do
             {_, constructor} = constructor_abi
             input_types = Enum.map(constructor["inputs"], fn x -> x["type"] end)
             types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
-            bin <> (ExW3.encode_data(types_signature, args[:args]) |> Base.encode16(case: :lower))
+
+            if Enum.count(input_types) != Enum.count(arguments) do
+                IO.warn("Number of provided arguments is invalid")
+            end
+
+            bin <> (ExW3.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
           else
+            IO.warn("Could not find a constructor")
             bin
           end
         else
@@ -526,6 +546,15 @@ defmodule ExW3 do
       )
     end
 
+
+    # Options' checkers
+
+    defp check_option(nil, error_atom), do: {:error, error_atom}
+    defp check_option([], error_atom), do: {:error, error_atom}
+    defp check_option([head | tail], atom) when head != nil,  do: {:ok, head}
+    defp check_option([_head | tail], atom), do: check_option(tail, atom)
+    defp check_option(value, _atom), do: {:ok, value}
+
     # Casts
 
     def handle_cast({:at, address}, state) do
@@ -547,11 +576,15 @@ defmodule ExW3 do
     # Calls
 
     def handle_call({:deploy, args}, _from, state) do
-      case {args[:bin], state[:bin]} do
-        {nil, nil} -> {:reply, {:error, "contract binary was never provided"}, state}
-        {bin, nil} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
-        {nil, bin} -> {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
-      end
+      with {:ok, _} <- check_option(args[:options][:from], :missing_sender),
+           {:ok,_} <- check_option(args[:options][:gas], :missing_gas),
+           {:ok, bin} <- check_option([state[:bin], args[:bin]], :missing_binary)
+       do
+         result = {:ok, deploy_helper(bin, state[:abi], args)}
+        {:reply, result , state}
+       else
+         err -> {:reply, err, state}
+       end
     end
 
     def handle_call(:address, _from, state) do
@@ -559,24 +592,24 @@ defmodule ExW3 do
     end
 
     def handle_call({:call, {method_name, args}}, _from, state) do
-      address = state[:address]
-
-      if address do
-        result = eth_call_helper(address, state[:abi], Atom.to_string(method_name), args)
-        {:reply, result, state}
-      else
-        {:reply, {:error, "contract address not available"}, state}
+      with {:ok, address} <- check_option(state[:address], :missing_address)
+        do
+          result = eth_call_helper(address, state[:abi], Atom.to_string(method_name), args)
+         {:reply, result, state}
+        else
+         err -> {:reply, err, state}
       end
     end
 
     def handle_call({:send, {method_name, args, options}}, _from, state) do
-      address = state[:address]
-
-      if address do
-        result = eth_send_helper(address, state[:abi], Atom.to_string(method_name), args, options)
-        {:reply, result, state}
-      else
-        {:reply, {:error, "contract address not available"}, state}
+      with {:ok, address} <- check_option(state[:address], :missing_address),
+           {:ok, _} <- check_option(options[:from], :missing_sender),
+           {:ok, _} <- check_option(options[:gas], :missing_gas)
+        do
+          result = eth_send_helper(address, state[:abi], Atom.to_string(method_name), args, options)
+          {:reply, result, state}
+        else
+          err -> {:reply, err, state}
       end
     end
 
