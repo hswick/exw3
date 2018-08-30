@@ -513,11 +513,11 @@ defmodule ExW3 do
         gas: "0x#{gas}"
       }
 
-      {:ok, tx_receipt_id} = Ethereumex.HttpClient.eth_send_transaction(tx)
+      {:ok, tx_hash} = Ethereumex.HttpClient.eth_send_transaction(tx)
 
-      {:ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_receipt_id)
+      {:ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_hash)
 
-      tx_receipt["contractAddress"]
+      {tx_receipt["contractAddress"], tx_hash}
     end
 
     def eth_call_helper(address, abi, method_name, args) do
@@ -580,7 +580,8 @@ defmodule ExW3 do
            {:ok,_} <- check_option(args[:options][:gas], :missing_gas),
            {:ok, bin} <- check_option([state[:bin], args[:bin]], :missing_binary)
        do
-         result = {:ok, deploy_helper(bin, state[:abi], args)}
+        {contract_addr, tx_hash} = deploy_helper(bin, state[:abi], args)
+        result = {:ok, contract_addr, tx_hash}
         {:reply, result , state}
        else
          err -> {:reply, err, state}
