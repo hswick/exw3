@@ -551,7 +551,7 @@ defmodule ExW3 do
 
     defp check_option(nil, error_atom), do: {:error, error_atom}
     defp check_option([], error_atom), do: {:error, error_atom}
-    defp check_option([head | tail], atom) when head != nil,  do: {:ok, head}
+    defp check_option([head | _tail], _atom) when head != nil,  do: {:ok, head}
     defp check_option([_head | tail], atom), do: check_option(tail, atom)
     defp check_option(value, _atom), do: {:ok, value}
 
