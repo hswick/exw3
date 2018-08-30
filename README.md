@@ -5,7 +5,7 @@
 ## Installation
 
         def deps do
-          [{:exw3, "~> 0.1.4"}]
+          [{:exw3, "~> 0.1.5"}]
         end
 
 ## Overview
