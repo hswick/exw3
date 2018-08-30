@@ -498,7 +498,7 @@ defmodule ExW3 do
 
             bin <> (ExW3.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
           else
-            IO.warn("Could not find a constructor")
+            #IO.warn("Could not find a constructor")
             bin
           end
         else
