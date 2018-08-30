@@ -82,7 +82,7 @@ iex(4)> simple_storage_abi = ExW3.load_abi("test/examples/build/SimpleStorage.ab
 }
 iex(5)> ExW3.Contract.start_link(SimpleStorage, abi: simple_storage_abi)
 {:ok, #PID<0.239.0>}
-iex(6)> {:ok, address} = ExW3.Contract.deploy(SimpleStorage, bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"), options: %{gas: 300_000, from: Enum.at(accounts, 0)})
+iex(6)> {:ok, address, tx_hash} = ExW3.Contract.deploy(SimpleStorage, bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"), options: %{gas: 300_000, from: Enum.at(accounts, 0)})
 {:ok, "0xd99306b81bd61cb0ecdd3f2c946af513b3395088"}
 iex(7)> ExW3.Contract.at(SimpleStorage, address)
 :ok
