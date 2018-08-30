@@ -493,7 +493,7 @@ defmodule ExW3 do
             types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
 
             if Enum.count(input_types) != Enum.count(arguments) do
-                IO.warn("Number of provided arguments is invalid")
+                throw "Number of provided arguments is invalid"
             end
 
             bin <> (ExW3.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
