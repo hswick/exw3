@@ -580,7 +580,8 @@ defmodule ExW3 do
            {:ok,_} <- check_option(args[:options][:gas], :missing_gas),
            {:ok, bin} <- check_option([state[:bin], args[:bin]], :missing_binary)
        do
-        {:reply, {:ok, deploy_helper(bin, state[:abi], args)}, state}
+         result = {:ok, deploy_helper(bin, state[:abi], args)}
+        {:reply, result , state}
        else
          err -> {:reply, err, state}
        end
@@ -593,7 +594,8 @@ defmodule ExW3 do
     def handle_call({:call, {method_name, args}}, _from, state) do
       with {:ok, address} <- check_option(state[:address], :missing_address)
         do
-         {:reply, eth_call_helper(address, state[:abi], Atom.to_string(method_name), args), state}
+          result = eth_call_helper(address, state[:abi], Atom.to_string(method_name), args)
+         {:reply, result, state}
         else
          err -> {:reply, err, state}
       end
@@ -604,7 +606,8 @@ defmodule ExW3 do
            {:ok, _} <- check_option(options[:from], :missing_sender),
            {:ok, _} <- check_option(options[:gas], :missing_gas)
         do
-          {:reply, eth_send_helper(address, state[:abi], Atom.to_string(method_name), args, options), state}
+          result = eth_send_helper(address, state[:abi], Atom.to_string(method_name), args, options)
+          {:reply, result, state}
         else
           err -> {:reply, err, state}
       end
