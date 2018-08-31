@@ -1,5 +1,59 @@
 defmodule ExW3 do
 
+  Module.register_attribute __MODULE__, :unit_map, persist: true, accumulate: false
+  
+  @unit_map %{
+    :noether => 0,
+    :wei => 1,
+    :kwei => 1_000,
+    :Kwei => 1_000,
+    :babbage => 1_000,
+    :femtoether => 1_000,
+    :mwei => 1_000_000,
+    :Mwei => 1_000_000,
+    :lovelace => 1_000_000,
+    :picoether => 1_000_000,
+    :gwei => 1_000_000_000,
+    :Gwei => 1_000_000_000,
+    :shannon => 1_000_000_000,
+    :nanoether => 1_000_000_000,
+    :nano => 1_000_000_000,
+    :szabo => 1_000_000_000_000,
+    :microether => 1_000_000_000_000,
+    :micro => 1_000_000_000_000,
+    :finney => 1_000_000_000_000_000,
+    :milliether => 1_000_000_000_000_000,
+    :milli => 1_000_000_000_000_000,
+    :ether => 1_000_000_000_000_000_000,
+    :kether => 1_000_000_000_000_000_000_000,
+    :grand => 1_000_000_000_000_000_000_000,
+    :mether => 1_000_000_000_000_000_000_000_000,
+    :gether => 1_000_000_000_000_000_000_000_000_000,
+    :tether => 1_000_000_000_000_000_000_000_000_000_000
+  }
+
+  @spec get_unit_map() :: %{}
+  @doc "Returns the map used for ether unit conversion"
+  def get_unit_map do
+    @unit_map
+  end
+
+  def to_wei(num, key) do
+    if @unit_map[key] do
+      num * @unit_map[key]
+    else
+      throw "#{key} not valid unit"
+    end
+  end
+
+  def from_wei(num, key) do
+    if @unit_map[key] do
+      num / @unit_map[key]
+    else
+      throw "#{key} not valid unit"
+    end
+  end
+
   @spec keccak256(binary()) :: binary()
   @doc "Returns a 0x prepended 32 byte hash of the input string"
   def keccak256(string) do

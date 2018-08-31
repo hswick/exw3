@@ -181,7 +181,7 @@ defmodule EXW3Test do
   
     receive do
       {:event, {_filter_id, data}} ->
-	Agent.update(agent, fn list -> [data | list] end)	
+	Agent.update(agent, fn list -> [data | list] end)
     after 3_000 ->
 	raise "Never received event"
     end
@@ -339,6 +339,59 @@ defmodule EXW3Test do
     assert {:error, :missing_sender} == ExW3.Contract.send(SimpleStorage, :set, [1], %{gas: 50_000})
     assert {:error, :missing_gas} == ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
 
+  end
+
+  test "unit conversion to_wei" do
+    
+    assert ExW3.to_wei(1, :wei) == 1
+    assert ExW3.to_wei(1, :kwei) == 1_000
+    assert ExW3.to_wei(1, :Kwei) == 1_000
+    assert ExW3.to_wei(1, :babbage) == 1_000
+    assert ExW3.to_wei(1, :mwei) == 1_000_000
+    assert ExW3.to_wei(1, :Mwei) == 1_000_000
+    assert ExW3.to_wei(1, :lovelace) == 1_000_000
+    assert ExW3.to_wei(1, :gwei) == 1_000_000_000
+    assert ExW3.to_wei(1, :Gwei) == 1_000_000_000
+    assert ExW3.to_wei(1, :shannon) == 1_000_000_000
+    assert ExW3.to_wei(1, :szabo) == 1_000_000_000_000
+    assert ExW3.to_wei(1, :finney) == 1_000_000_000_000_000
+    assert ExW3.to_wei(1, :ether) == 1_000_000_000_000_000_000
+    assert ExW3.to_wei(1, :kether) == 1_000_000_000_000_000_000_000
+    assert ExW3.to_wei(1, :grand) == 1_000_000_000_000_000_000_000
+    assert ExW3.to_wei(1, :mether) == 1_000_000_000_000_000_000_000_000
+    assert ExW3.to_wei(1, :gether) == 1_000_000_000_000_000_000_000_000_000
+    assert ExW3.to_wei(1, :tether) == 1_000_000_000_000_000_000_000_000_000_000
+
+    assert ExW3.to_wei(1, :kwei) == ExW3.to_wei(1, :femtoether)
+    assert ExW3.to_wei(1, :szabo) == ExW3.to_wei(1, :microether)
+    assert ExW3.to_wei(1, :finney) == ExW3.to_wei(1, :milliether)
+    assert ExW3.to_wei(1, :milli) == ExW3.to_wei(1, :milliether)
+    assert ExW3.to_wei(1, :milli) == ExW3.to_wei(1000, :micro)
+
+    {:ok, agent} = Agent.start_link(fn -> false end)
+
+    try do
+      ExW3.to_wei(1, :wei1)
+    catch
+      _ -> Agent.update(agent, fn _ -> true  end)
+    end
+
+    assert Agent.get(agent, fn state -> state end)
+  end
+
+  test "unit conversion from wei" do
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :wei) == 1_000_000_000_000_000_000
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :kwei) == 1_000_000_000_000_000
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :mwei) == 1_000_000_000_000
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :gwei) == 1_000_000_000
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :szabo) == 1_000_000
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :finney) == 1_000
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :ether) == 1
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :kether) == 0.001
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :grand) == 0.001
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :mether) == 0.000001
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :gether) == 0.000000001
+    assert ExW3.from_wei(1_000_000_000_000_000_000, :tether) == 0.000000000001
   end
 
 end
