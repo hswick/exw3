@@ -555,8 +555,10 @@ defmodule ExW3 do
             input_types = Enum.map(constructor["inputs"], fn x -> x["type"] end)
             types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
 
-            if Enum.count(input_types) != Enum.count(arguments) do
-                throw "Number of provided arguments is invalid"
+	    arg_count = Enum.count(arguments)
+	    input_types_count = Enum.count(input_types)
+            if input_types_count != arg_count do
+                raise "Number of provided arguments to constructor is incorrect. Was given #{arg_count} args, was looking for #{input_types_count}."
             end
 
             bin <> (ExW3.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
