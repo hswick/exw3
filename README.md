@@ -4,10 +4,11 @@
 
 ## Installation
 
-        def deps do
-          [{:exw3, "~> 0.1.5"}]
-        end
-
+```elixir
+def deps do
+  [{:exw3, "~> 0.1.6"}]
+end
+```
 ## Overview
 
 ExW3 is a wrapper around ethereumex to provide a high level, user friendly json rpc api. It currently only supports Http. The primary feature it provides is a handy abstraction for working with smart contracts.
@@ -143,7 +144,7 @@ end
 
 
 
-# Compiling Soldity
+# Compiling Solidity
 
 To compile the test solidity contracts after making a change run this command:
 ```
