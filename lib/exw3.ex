@@ -266,6 +266,15 @@ defmodule ExW3 do
     )
   end
 
+
+  @spec encode_option(integer()) :: binary()
+  @doc "Encodes options into Ethereum JSON RPC hex string"
+  def encode_option(0), do: "0x0"
+
+  def encode_option(value) do
+    "0x" <> (value |> :binary.encode_unsigned() |> Base.encode16(case: :lower) |> String.trim_leading("0"))
+  end
+
   @spec encode_method_call(%{}, binary(), []) :: binary()
   @doc "Encodes data and appends it to the encoded method id"
   def encode_method_call(abi, name, input) do
@@ -505,12 +514,12 @@ defmodule ExW3 do
           bin
         end
 
-      gas = ExW3.encode_data("(uint)", [args[:options][:gas]]) |> Base.encode16(case: :lower)
+      gas = ExW3.encode_option(args[:options][:gas])
 
       tx = %{
         from: args[:options][:from],
         data: "0x#{constructor_arg_data}",
-        gas: "0x#{gas}"
+        gas: gas
       }
 
       {:ok, tx_hash} = Ethereumex.HttpClient.eth_send_transaction(tx)
@@ -534,14 +543,14 @@ defmodule ExW3 do
     end
 
     def eth_send_helper(address, abi, method_name, args, options) do
-      gas = ExW3.encode_data("(uint)", [options[:gas]]) |> Base.encode16(case: :lower)
+      gas = ExW3.encode_option(options[:gas])
       Ethereumex.HttpClient.eth_send_transaction(
         Map.merge(
           %{
             to: address,
             data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
           },
-          Map.put(options, :gas, "0x#{gas}")
+          Map.put(options, :gas, gas)
         )
       )
     end
