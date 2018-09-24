@@ -271,6 +271,15 @@ defmodule ExW3 do
     end
   end
 
+  @spec decode_data(binary(), binary()) :: any()
+  @doc "Decodes data based on given type signature"
+  def decode_data(types_signature, data) do
+    {:ok, trim_data} =
+      String.slice(data, 2..String.length(data)) |> Base.decode16(case: :lower)
+
+    ABI.decode(types_signature, trim_data) |> List.first()
+  end
+
   @spec decode_output(%{}, binary(), binary()) :: []
   @doc "Decodes output based on specified functions return signature"
   def decode_output(abi, name, output) do
@@ -518,9 +527,9 @@ defmodule ExW3 do
       Enum.join([name, "(", Enum.join(non_indexed_types, ","), ")"])      
     end
 
-    defp topics_helper(fields) do
+    defp topic_types_helper(fields) do
       if length(fields) > 0 do
-	types = Enum.map(fields, fn field ->
+	Enum.map(fields, fn field ->
 	  "(#{field["type"]})"
 	end)	
       else
@@ -545,6 +554,10 @@ defmodule ExW3 do
 	    input["indexed"]
 	  end)
 
+	  indexed_names = Enum.map(indexed_fields, fn field ->
+	    field["name"]
+	  end)
+
 	  non_indexed_fields = Enum.filter(v["inputs"], fn input ->
 	    !input["indexed"]
 	  end)
@@ -558,7 +571,8 @@ defmodule ExW3 do
 	  event_attributes = %{
 	    signature: data_signature,
 	    non_indexed_names: non_indexed_names,
-	    topics: topics_helper(indexed_fields) 
+	    topic_types: topic_types_helper(indexed_fields),
+	    topic_names: indexed_names
 	    }
 
           {{encoded_event_signature, event_attributes}, {name, encoded_event_signature}}
@@ -752,8 +766,27 @@ defmodule ExW3 do
           event = Map.get(events, topic)
 
           if event do
-            Enum.zip(event[:non_indexed_names], ExW3.decode_event(log["data"], event[:signature]))
-            |> Enum.into(%{})
+            non_indexed_fields = Enum.zip(event[:non_indexed_names], ExW3.decode_event(log["data"], event[:signature])) |> Enum.into(%{})
+
+
+	    if length(log["topics"]) > 1 do
+	      [ _head | tail ] = log["topics"]
+	      decoded_topics = Enum.map(0..length(tail) - 1, fn i ->
+		
+		topic_type = Enum.at(event[:topic_types], i)
+		topic_data = Enum.at(tail, i)
+		
+		{decoded} = ExW3.decode_data(topic_type, topic_data)
+
+		decoded
+	      end)
+
+	      indexed_fields = Enum.zip(event[:topic_names], decoded_topics) |> Enum.into(%{})
+	      Map.merge(indexed_fields, non_indexed_fields)
+	    else
+	      non_indexed_fields
+	    end
+	    
           else
             nil
           end
