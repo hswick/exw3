@@ -518,6 +518,16 @@ defmodule ExW3 do
       Enum.join([name, "(", Enum.join(non_indexed_types, ","), ")"])      
     end
 
+    defp topics_helper(fields) do
+      if length(fields) > 0 do
+	types = Enum.map(fields, fn field ->
+	  "(#{field["type"]})"
+	end)	
+      else
+	[]
+      end      
+    end
+
     defp init_events(abi) do
       events =
         Enum.filter(abi, fn {_, v} ->
@@ -526,8 +536,7 @@ defmodule ExW3 do
 
       names_and_signature_types_map =
         Enum.map(events, fn {name, v} ->
-          types = Enum.map(v["inputs"], &Map.get(&1, "type"))
-          names = Enum.map(v["inputs"], &Map.get(&1, "name"))
+          types = Enum.map(v["inputs"], &Map.get(&1, "type"))          
           signature = Enum.join([name, "(", Enum.join(types, ","), ")"])
 
 	  encoded_event_signature = "0x#{ExW3.encode_event(signature)}"
@@ -540,9 +549,19 @@ defmodule ExW3 do
 	    !input["indexed"]
 	  end)
 
+	  non_indexed_names = Enum.map(non_indexed_fields, fn field ->
+	    field["name"]
+	  end)
+
 	  data_signature = data_signature_helper(name, non_indexed_fields)
 
-          {{encoded_event_signature, %{signature: data_signature, names: names}}, {name, encoded_event_signature}}
+	  event_attributes = %{
+	    signature: data_signature,
+	    non_indexed_names: non_indexed_names,
+	    topics: topics_helper(indexed_fields) 
+	    }
+
+          {{encoded_event_signature, event_attributes}, {name, encoded_event_signature}}
         end)
 
       signature_types_map =
@@ -669,7 +688,7 @@ defmodule ExW3 do
       payload = Map.merge(%{address: contract_info[:address], topics: [contract_info[:event_names][event_name]]}, event_data)
       filter_id = ExW3.new_filter(payload)
       event_signature = contract_info[:events][contract_info[:event_names][event_name]][:signature]
-      event_fields = contract_info[:events][contract_info[:event_names][event_name]][:names]
+      event_fields = contract_info[:events][contract_info[:event_names][event_name]][:non_indexed_names]
       EventListener.filter(filter_id, event_signature, event_fields, other_pid)
       {:reply, filter_id, Map.put(state, contract_name, contract_info ++ [event_name, filter_id])}
     end
@@ -733,7 +752,7 @@ defmodule ExW3 do
           event = Map.get(events, topic)
 
           if event do
-            Enum.zip(event[:names], ExW3.decode_event(log["data"], event[:signature]))
+            Enum.zip(event[:non_indexed_names], ExW3.decode_event(log["data"], event[:signature]))
             |> Enum.into(%{})
           else
             nil

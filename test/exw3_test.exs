@@ -159,11 +159,29 @@ defmodule EXW3Test do
 	    gas: 30_000
 			 })
 
-    {:ok, {receipt, logs}} = ExW3.Contract.tx_receipt(:EventTester, tx_hash2)
+    {:ok, {_receipt, logs}} = ExW3.Contract.tx_receipt(:EventTester, tx_hash2)
 
-    IO.inspect receipt
+    otherNum =
+      logs
+      |> Enum.at(0)
+      |> Map.get("otherNum")
 
-    
+    assert otherNum == 42
+
+    num =
+      logs
+      |> Enum.at(0)
+      |> Map.get("num")
+
+    assert num == 46
+
+    data =
+      logs
+      |> Enum.at(0)
+      |> Map.get("data")
+      |> ExW3.bytes_to_string
+
+    assert data == "Hello, World!"
   end
 
   test "starts a Contract GenServer and uses the event listener", context do
