@@ -429,15 +429,20 @@ defmodule ExW3 do
       end
       listen(callback)
     end
+
+    defp decode_topics(topics) do
+    end
     
     defp loop(state) do
       receive do
 	{:filter, filter_id, event_signature, event_fields, pid} ->
+	  IO.inspect(event_signature)
 	  loop(Map.put(state, filter_id, %{pid: pid, signature: event_signature, names: event_fields}))
 	{:event, filter_id, logs} ->
 	  filter_attributes = Map.get(state, filter_id)
 	  unless logs == [] do
 	    Enum.each(logs, fn log ->
+	      IO.inspect log
 	      data = Map.get(log, "data")
 	      new_data = Enum.zip(filter_attributes[:names], ExW3.decode_event(data, filter_attributes[:signature])) |> Enum.into(%{})
 	      new_log = Map.put(log, "data", new_data)
@@ -447,6 +452,7 @@ defmodule ExW3 do
 	  loop(state)
       end
     end
+    
   end
 
   defmodule Contract do
