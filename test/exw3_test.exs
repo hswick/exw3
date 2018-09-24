@@ -3,6 +3,8 @@ defmodule EXW3Test do
   doctest ExW3
 
   setup_all do
+    ExW3.Contract.start_link
+    
     %{
       simple_storage_abi: ExW3.load_abi("test/examples/build/SimpleStorage.abi"),
       array_tester_abi: ExW3.load_abi("test/examples/build/ArrayTester.abi"),
@@ -58,11 +60,13 @@ defmodule EXW3Test do
   end
 
   test "starts a Contract GenServer for simple storage contract", context do
-    ExW3.Contract.start_link(SimpleStorage, abi: context[:simple_storage_abi])
+    
+    
+    ExW3.Contract.register(:SimpleStorage, abi: context[:simple_storage_abi])
 
     {:ok, address, _} =
       ExW3.Contract.deploy(
-        SimpleStorage,
+	:SimpleStorage,
         bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
@@ -71,27 +75,27 @@ defmodule EXW3Test do
         }
       )
 
-    ExW3.Contract.at(SimpleStorage, address)
+    ExW3.Contract.at(:SimpleStorage, address)
 
-    assert address == ExW3.Contract.address(SimpleStorage)
+    assert address == ExW3.Contract.address(:SimpleStorage)
 
-    {:ok, data} = ExW3.Contract.call(SimpleStorage, :get)
+    {:ok, data} = ExW3.Contract.call(:SimpleStorage, :get)
 
     assert data == 0
 
-    ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0), gas: 50_000})
+    ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0), gas: 50_000})
 
-    {:ok, data} = ExW3.Contract.call(SimpleStorage, :get)
+    {:ok, data} = ExW3.Contract.call(:SimpleStorage, :get)
 
     assert data == 1
   end
 
   test "starts a Contract GenServer for array tester contract", context do
-    ExW3.Contract.start_link(ArrayTester, abi: context[:array_tester_abi])
+    ExW3.Contract.register(:ArrayTester, abi: context[:array_tester_abi])
 
     {:ok, address, _} =
       ExW3.Contract.deploy(
-        ArrayTester,
+        :ArrayTester,
         bin: ExW3.load_bin("test/examples/build/ArrayTester.bin"),
         options: %{
           gas: 300_000,
@@ -99,27 +103,27 @@ defmodule EXW3Test do
         }
       )
 
-    ExW3.Contract.at(ArrayTester, address)
+    ExW3.Contract.at(:ArrayTester, address)
 
-    assert address == ExW3.Contract.address(ArrayTester)
+    assert address == ExW3.Contract.address(:ArrayTester)
 
     arr = [1, 2, 3, 4, 5]
 
-    {:ok, result} = ExW3.Contract.call(ArrayTester, :staticUint, [arr])
+    {:ok, result} = ExW3.Contract.call(:ArrayTester, :staticUint, [arr])
 
     assert result == arr
 
-    {:ok, result} = ExW3.Contract.call(ArrayTester, :dynamicUint, [arr])
+    {:ok, result} = ExW3.Contract.call(:ArrayTester, :dynamicUint, [arr])
 
     assert result == arr
   end
 
   test "starts a Contract GenServer for event tester contract", context do
-    ExW3.Contract.start_link(EventTester, abi: context[:event_tester_abi])
+    ExW3.Contract.register(:EventTester, abi: context[:event_tester_abi])
 
     {:ok, address, _} =
       ExW3.Contract.deploy(
-        EventTester,
+        :EventTester,
         bin: ExW3.load_bin("test/examples/build/EventTester.bin"),
         options: %{
           gas: 300_000,
@@ -127,17 +131,17 @@ defmodule EXW3Test do
         }
       )
 
-    ExW3.Contract.at(EventTester, address)
+    ExW3.Contract.at(:EventTester, address)
 
-    assert address == ExW3.Contract.address(EventTester)
+    assert address == ExW3.Contract.address(:EventTester)
 
     {:ok, tx_hash} =
-      ExW3.Contract.send(EventTester, :simple, ["Hello, World!"], %{
+      ExW3.Contract.send(:EventTester, :simple, ["Hello, World!"], %{
             from: Enum.at(context[:accounts], 0),
 	    gas: 30_000
       })
 
-    {:ok, {receipt, logs}} = ExW3.Contract.tx_receipt(EventTester, tx_hash)
+    {:ok, {receipt, logs}} = ExW3.Contract.tx_receipt(:EventTester, tx_hash)
 
     assert receipt |> is_map
 
@@ -151,11 +155,11 @@ defmodule EXW3Test do
   end
 
   test "starts a Contract GenServer and uses the event listener", context do
-    ExW3.Contract.start_link(EventTester, abi: context[:event_tester_abi])
+    ExW3.Contract.register(:EventTester, abi: context[:event_tester_abi])
 
     {:ok, address, _} =
       ExW3.Contract.deploy(
-        EventTester,
+        :EventTester,
         bin: ExW3.load_bin("test/examples/build/EventTester.bin"),
         options: %{
           gas: 300_000,
@@ -163,17 +167,17 @@ defmodule EXW3Test do
         }
       )
 
-    ExW3.Contract.at(EventTester, address)
+    ExW3.Contract.at(:EventTester, address)
 
     {:ok, agent} = Agent.start_link(fn -> [] end)
   
     ExW3.EventListener.start_link()
 
-    filter_id = ExW3.Contract.filter(EventTester, "Simple", self())
+    filter_id = ExW3.Contract.filter(:EventTester, "Simple", self())
 
     {:ok, _tx_hash} =
       ExW3.Contract.send(
-	EventTester,
+	:EventTester,
 	:simple,
 	["Hello, World!"],
 	%{from: Enum.at(context[:accounts], 0), gas: 30_000}
@@ -189,6 +193,7 @@ defmodule EXW3Test do
     state = Agent.get(agent, fn list -> list end)
     event_log = Enum.at(state, 0)
     assert event_log |> is_map
+    
     log_data = Map.get(event_log, "data")
     assert log_data |> is_map
     assert Map.get(log_data, "num") == 42
@@ -198,11 +203,11 @@ defmodule EXW3Test do
   end
 
   test "starts a Contract GenServer for Complex contract", context do
-    ExW3.Contract.start_link(Complex, abi: context[:complex_abi])
+    ExW3.Contract.register(:Complex, abi: context[:complex_abi])
 
     {:ok, address, _} =
       ExW3.Contract.deploy(
-        Complex,
+        :Complex,
         bin: ExW3.load_bin("test/examples/build/Complex.bin"),
         args: [42, "Hello, world!"],
         options: %{
@@ -211,11 +216,11 @@ defmodule EXW3Test do
         }
       )
 
-    ExW3.Contract.at(Complex, address)
+    ExW3.Contract.at(:Complex, address)
 
-    assert address == ExW3.Contract.address(Complex)
+    assert address == ExW3.Contract.address(:Complex)
 
-    {:ok, foo, foobar} = ExW3.Contract.call(Complex, :getBoth)
+    {:ok, foo, foobar} = ExW3.Contract.call(:Complex, :getBoth)
 
     assert foo == 42
 
@@ -223,11 +228,11 @@ defmodule EXW3Test do
   end
 
   test "starts a Contract GenServer for AddressTester contract", context do
-    ExW3.Contract.start_link(AddressTester, abi: context[:address_tester_abi])
+    ExW3.Contract.register(:AddressTester, abi: context[:address_tester_abi])
 
     {:ok, address, _} =
       ExW3.Contract.deploy(
-        AddressTester,
+        :AddressTester,
         bin: ExW3.load_bin("test/examples/build/AddressTester.bin"),
         options: %{
           from: Enum.at(context[:accounts], 0),
@@ -235,15 +240,15 @@ defmodule EXW3Test do
         }
       )
 
-    ExW3.Contract.at(AddressTester, address)
+    ExW3.Contract.at(:AddressTester, address)
 
-    assert address == ExW3.Contract.address(AddressTester)
+    assert address == ExW3.Contract.address(:AddressTester)
 
     formatted_address =
 			Enum.at(context[:accounts], 0)
 			|> ExW3.format_address
 
-    {:ok, same_address} = ExW3.Contract.call(AddressTester, :get, [formatted_address])
+    {:ok, same_address} = ExW3.Contract.call(:AddressTester, :get, [formatted_address])
 
     assert ExW3.to_address(same_address) == Enum.at(context[:accounts], 0)
   end
@@ -283,11 +288,11 @@ defmodule EXW3Test do
 
   test "returns proper error messages at contract deployment", context do
 
-    ExW3.Contract.start_link(SimpleStorage, abi: context[:simple_storage_abi])
+    ExW3.Contract.register(:SimpleStorage, abi: context[:simple_storage_abi])
 
     assert {:error, :missing_gas} ==
       ExW3.Contract.deploy(
-        SimpleStorage,
+        :SimpleStorage,
         bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
@@ -297,7 +302,7 @@ defmodule EXW3Test do
 
     assert {:error, :missing_sender} ==
              ExW3.Contract.deploy(
-               SimpleStorage,
+               :SimpleStorage,
                bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
                args: [],
                options: %{
@@ -307,7 +312,7 @@ defmodule EXW3Test do
 
     assert {:error, :missing_binary} ==
              ExW3.Contract.deploy(
-               SimpleStorage,
+               :SimpleStorage,
                args: [],
                options: %{
                  gas: 300_000,
@@ -318,11 +323,11 @@ defmodule EXW3Test do
   end
 
   test "return proper error messages at send and call", context do
-    ExW3.Contract.start_link(SimpleStorage, abi: context[:simple_storage_abi])
+    ExW3.Contract.register(:SimpleStorage, abi: context[:simple_storage_abi])
 
     {:ok, address, _} =
       ExW3.Contract.deploy(
-        SimpleStorage,
+        :SimpleStorage,
         bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
@@ -331,13 +336,13 @@ defmodule EXW3Test do
         }
       )
 
-    assert {:error, :missing_address} == ExW3.Contract.call(SimpleStorage, :get)
-    assert {:error, :missing_address} == ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0), gas: 50_000})
+    assert {:error, :missing_address} == ExW3.Contract.call(:SimpleStorage, :get)
+    assert {:error, :missing_address} == ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0), gas: 50_000})
 
-    ExW3.Contract.at(SimpleStorage, address)
+    ExW3.Contract.at(:SimpleStorage, address)
 
-    assert {:error, :missing_sender} == ExW3.Contract.send(SimpleStorage, :set, [1], %{gas: 50_000})
-    assert {:error, :missing_gas} == ExW3.Contract.send(SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
+    assert {:error, :missing_sender} == ExW3.Contract.send(:SimpleStorage, :set, [1], %{gas: 50_000})
+    assert {:error, :missing_gas} == ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
 
   end
 

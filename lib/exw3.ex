@@ -454,60 +454,62 @@ defmodule ExW3 do
 
     # Client
 
-    @spec start_link(atom(), list()) :: {:ok, pid()}
-    @doc "Begins a Contract GenServer with specified name and state"
-    def start_link(name, state) do
-      GenServer.start_link(__MODULE__, state, name: name)
+    @spec start_link() :: {:ok, pid()}
+    @doc "Begins the Contract process to manage all interactions with smart contracts"
+    def start_link() do
+      GenServer.start_link(__MODULE__, %{}, name: ContractManager)
     end
 
-    @spec deploy(pid(), []) :: {:ok, []}
+    @spec deploy(keyword(), []) :: {:ok, binary(), []}
     @doc "Deploys contracts with given arguments"
-    def deploy(pid, args) do
-      GenServer.call(pid, {:deploy, args})
+    def deploy(name, args) do
+      GenServer.call(ContractManager, {:deploy, {name, args}})
     end
 
-    @spec at(pid(), binary()) :: :ok
-    @doc "Sets the current Contract GenServer's address to given address"
-    def at(pid, address) do
-      GenServer.cast(pid, {:at, address})
+    @spec register(keyword(), []) :: :ok
+    @doc "Registers the contract with the ContractManager process. Only :abi is required field."
+    def register(name, contract_info) do
+      GenServer.cast(ContractManager, {:register, {name, contract_info}})
     end
 
-    @spec address(pid()) :: {:ok, binary()}
+    @spec at(keyword(), binary()) :: :ok
+    @doc "Sets the address for the contract specified by the name argument"
+    def at(name, address) do
+      GenServer.cast(ContractManager, {:at, {name, address}})
+    end
+
+    @spec address(keyword()) :: {:ok, binary()}
     @doc "Returns the current Contract GenServer's address"
-    def address(pid) do
-      GenServer.call(pid, :address)
+    def address(name) do
+      GenServer.call(ContractManager, {:address, name})
     end
 
-    @spec call(pid(), keyword(), []) :: {:ok, any()}
+    @spec call(keyword(), keyword(), []) :: {:ok, any()}
     @doc "Use a Contract's method with an eth_call"
-    def call(pid, method_name, args \\ []) do
-      GenServer.call(pid, {:call, {method_name, args}})
+    def call(contract_name, method_name, args \\ []) do
+      GenServer.call(ContractManager, {:call, {contract_name, method_name, args}})
     end
 
-    @spec send(pid(), keyword(), [], %{}) :: {:ok, binary()}
+    @spec send(keyword(), keyword(), [], %{}) :: {:ok, binary()}
     @doc "Use a Contract's method with an eth_sendTransaction"
-    def send(pid, method_name, args, options) do
-      GenServer.call(pid, {:send, {method_name, args, options}})
+    def send(contract_name, method_name, args, options) do
+      GenServer.call(ContractManager, {:send, {contract_name, method_name, args, options}})
     end
 
-    @spec tx_receipt(pid(), binary()) :: %{}
+    @spec tx_receipt(keyword(), binary()) :: %{}
     @doc "Returns a formatted transaction receipt for the given transaction hash(id)"
-    def tx_receipt(pid, tx_hash) do
-      GenServer.call(pid, {:tx_receipt, tx_hash})
+    def tx_receipt(contract_name, tx_hash) do
+      GenServer.call(ContractManager, {:tx_receipt, {contract_name, tx_hash}})
     end
 
-    def filter(pid, event_name, other_pid, event_data \\ %{}) do
-      GenServer.call(pid, {:filter, {event_name, other_pid, event_data}})
+    def filter(contract_name, event_name, other_pid, event_data \\ %{}) do
+      GenServer.call(ContractManager, {:filter, {contract_name, event_name, other_pid, event_data}})
     end
 
     # Server
 
     def init(state) do
-      if state[:abi] do
-	{:ok, state ++ init_events(state[:abi])}
-      else
-        raise "ABI not provided upon initialization"
-      end
+      {:ok, state}      
     end
 
     defp init_events(abi) do
@@ -611,6 +613,13 @@ defmodule ExW3 do
       )
     end
 
+    defp add_helper(contract_info) do
+      if contract_info[:abi] do
+	contract_info ++ init_events(contract_info[:abi])
+      else
+        raise "ABI not provided upon initialization"
+      end
+    end
 
     # Options' checkers
 
@@ -622,66 +631,83 @@ defmodule ExW3 do
 
     # Casts
 
-    def handle_cast({:at, address}, state) do
-      {:noreply, [{:address, address} | state]}
+    def handle_cast({:at, {name, address}}, state) do
+      contract_info = state[name]
+      {:noreply, Map.put(state, name, contract_info ++ [address: address])} 
     end
 
-    def handle_call({:filter, {event_name, other_pid, event_data}}, _from, state) do
-      unless Process.whereis(Listener) do
-	raise "EventListener process not alive. Call ExW3.EventListener.start_link before using ExW3.Contract.subscribe"
-      end
-      payload = Map.merge(%{address: state[:address], topics: [state[:event_names][event_name]]}, event_data)
-      filter_id = ExW3.new_filter(payload)
-      event_signature = state[:events][state[:event_names][event_name]][:signature]
-      event_fields = state[:events][state[:event_names][event_name]][:names]
-      EventListener.filter(filter_id, event_signature, event_fields, other_pid)
-      {:reply, filter_id, state ++ [event_name, filter_id]}
+    def handle_cast({:register, {name, contract_info}}, state) do		     
+      {:noreply, Map.put(state, name, add_helper(contract_info))}
     end
 
     # Calls
 
-    def handle_call({:deploy, args}, _from, state) do
+    def handle_call({:filter, {contract_name, event_name, other_pid, event_data}}, _from, state) do
+
+      contract_info = state[contract_name]
+      
+      unless Process.whereis(Listener) do
+	raise "EventListener process not alive. Call ExW3.EventListener.start_link before using ExW3.Contract.subscribe"
+      end
+      
+      payload = Map.merge(%{address: contract_info[:address], topics: [contract_info[:event_names][event_name]]}, event_data)
+      filter_id = ExW3.new_filter(payload)
+      event_signature = contract_info[:events][contract_info[:event_names][event_name]][:signature]
+      event_fields = contract_info[:events][contract_info[:event_names][event_name]][:names]
+      EventListener.filter(filter_id, event_signature, event_fields, other_pid)
+      {:reply, filter_id, Map.put(state, contract_name, contract_info ++ [event_name, filter_id])}
+    end
+
+    def handle_call({:deploy, {name, args}}, _from, state) do
+
+      contract_info = state[name]
+      
       with {:ok, _} <- check_option(args[:options][:from], :missing_sender),
            {:ok,_} <- check_option(args[:options][:gas], :missing_gas),
            {:ok, bin} <- check_option([state[:bin], args[:bin]], :missing_binary)
-       do
-        {contract_addr, tx_hash} = deploy_helper(bin, state[:abi], args)
+	do
+        {contract_addr, tx_hash} = deploy_helper(bin, contract_info[:abi], args)
         result = {:ok, contract_addr, tx_hash}
         {:reply, result , state}
-       else
-         err -> {:reply, err, state}
-       end
+	else
+          err -> {:reply, err, state}
+      end
     end
 
-    def handle_call(:address, _from, state) do
-      {:reply, state[:address], state}
+    def handle_call({:address, name},  _from, state) do
+      {:reply, state[name][:address], state}
     end
 
-    def handle_call({:call, {method_name, args}}, _from, state) do
-      with {:ok, address} <- check_option(state[:address], :missing_address)
+    def handle_call({:call, {contract_name, method_name, args}}, _from, state) do
+      contract_info = state[contract_name]
+      
+      with {:ok, address} <- check_option(contract_info[:address], :missing_address)
         do
-          result = eth_call_helper(address, state[:abi], Atom.to_string(method_name), args)
+          result = eth_call_helper(address, contract_info[:abi], Atom.to_string(method_name), args)
          {:reply, result, state}
         else
          err -> {:reply, err, state}
       end
     end
 
-    def handle_call({:send, {method_name, args, options}}, _from, state) do
-      with {:ok, address} <- check_option(state[:address], :missing_address),
+    def handle_call({:send, {contract_name, method_name, args, options}}, _from, state) do
+      contract_info = state[contract_name]
+      with {:ok, address} <- check_option(contract_info[:address], :missing_address),
            {:ok, _} <- check_option(options[:from], :missing_sender),
            {:ok, _} <- check_option(options[:gas], :missing_gas)
         do
-          result = eth_send_helper(address, state[:abi], Atom.to_string(method_name), args, options)
+          result = eth_send_helper(address, contract_info[:abi], Atom.to_string(method_name), args, options)
           {:reply, result, state}
         else
           err -> {:reply, err, state}
       end
     end
 
-    def handle_call({:tx_receipt, tx_hash}, _from, state) do
+    def handle_call({:tx_receipt, {contract_name, tx_hash}}, _from, state) do
+      contract_info = state[contract_name]
+      
       receipt = ExW3.tx_receipt(tx_hash)
-      events = state[:events]
+      events = contract_info[:events]
       logs = receipt["logs"]
 
       formatted_logs =
