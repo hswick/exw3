@@ -429,20 +429,15 @@ defmodule ExW3 do
       end
       listen(callback)
     end
-
-    defp decode_topics(topics) do
-    end
     
     defp loop(state) do
       receive do
 	{:filter, filter_id, event_signature, event_fields, pid} ->
-	  IO.inspect(event_signature)
 	  loop(Map.put(state, filter_id, %{pid: pid, signature: event_signature, names: event_fields}))
 	{:event, filter_id, logs} ->
 	  filter_attributes = Map.get(state, filter_id)
 	  unless logs == [] do
 	    Enum.each(logs, fn log ->
-	      IO.inspect log
 	      data = Map.get(log, "data")
 	      new_data = Enum.zip(filter_attributes[:names], ExW3.decode_event(data, filter_attributes[:signature])) |> Enum.into(%{})
 	      new_log = Map.put(log, "data", new_data)
@@ -518,6 +513,11 @@ defmodule ExW3 do
       {:ok, state}      
     end
 
+    defp data_signature_helper(name, fields) do
+      non_indexed_types = Enum.map(fields, &Map.get(&1, "type"))
+      Enum.join([name, "(", Enum.join(non_indexed_types, ","), ")"])      
+    end
+
     defp init_events(abi) do
       events =
         Enum.filter(abi, fn {_, v} ->
@@ -532,7 +532,17 @@ defmodule ExW3 do
 
 	  encoded_event_signature = "0x#{ExW3.encode_event(signature)}"
 
-          {{encoded_event_signature, %{signature: signature, names: names}}, {name, encoded_event_signature}}
+	  indexed_fields = Enum.filter(v["inputs"], fn input ->
+	    input["indexed"]
+	  end)
+
+	  non_indexed_fields = Enum.filter(v["inputs"], fn input ->
+	    !input["indexed"]
+	  end)
+
+	  data_signature = data_signature_helper(name, non_indexed_fields)
+
+          {{encoded_event_signature, %{signature: data_signature, names: names}}, {name, encoded_event_signature}}
         end)
 
       signature_types_map =
@@ -713,6 +723,7 @@ defmodule ExW3 do
       contract_info = state[contract_name]
       
       receipt = ExW3.tx_receipt(tx_hash)
+
       events = contract_info[:events]
       logs = receipt["logs"]
 
