@@ -443,7 +443,7 @@ defmodule ExW3 do
       Enum.zip(names, ExW3.decode_event(data, signature)) |> Enum.into(%{})
     end
 
-    defp format_log(log, event_attributes) do
+    defp format_log_data(log, event_attributes) do
       non_indexed_fields =
 	extract_non_indexed_fields(
 	  Map.get(log, "data"),
@@ -468,7 +468,9 @@ defmodule ExW3 do
 	%{}
       end
 
-      Map.merge(indexed_fields, non_indexed_fields)
+      new_data = Map.merge(indexed_fields, non_indexed_fields)
+
+      Map.put(log, "data", new_data)
     end
     
     defp loop(state) do
@@ -481,7 +483,14 @@ defmodule ExW3 do
 	  
 	  unless logs == [] do
 	    Enum.each(logs, fn log ->
-	      send filter_attributes[:pid], {:event, {filter_id, format_log(log, event_attributes)}}
+	      formatted_log =
+	        Enum.reduce([
+		  ExW3.keys_to_decimal(log, ["blockNumber", "logIndex", "transactionIndex", "transactionLogIndex"]),
+		  format_log_data(log, event_attributes)
+		],
+		&Map.merge/2)
+	      
+	      send filter_attributes[:pid], {:event, {filter_id, formatted_log}}
 	    end)
 	  end
 	  loop(state)
