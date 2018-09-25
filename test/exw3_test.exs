@@ -226,10 +226,8 @@ defmodule EXW3Test do
     event_log = Enum.at(state, 0)
     assert event_log |> is_map
     
-    log_data = Map.get(event_log, "data")
-    assert log_data |> is_map
-    assert Map.get(log_data, "num") == 42
-    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert Map.get(event_log, "num") == 42
+    assert ExW3.bytes_to_string(Map.get(event_log, "data")) == "Hello, World!"
 
     ExW3.uninstall_filter(filter_id)
 
@@ -258,11 +256,9 @@ defmodule EXW3Test do
     event_log = Enum.at(state, 0)
     assert event_log |> is_map
     
-    log_data = Map.get(event_log, "data")
-    assert log_data |> is_map
-    assert Map.get(log_data, "num") == 46
-    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
-    assert Map.get(log_data, "otherNum") == 42
+    assert Map.get(event_log, "num") == 46
+    assert ExW3.bytes_to_string(Map.get(event_log, "data")) == "Hello, World!"
+    assert Map.get(event_log, "otherNum") == 42
     ExW3.uninstall_filter(indexed_filter_id)
   end
 

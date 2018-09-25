@@ -427,9 +427,9 @@ defmodule ExW3 do
       :ok
     end
 
-    def filter(filter_id, event_signature, event_fields, pid) do
+    def filter(filter_id, event_fields, pid) do
       Poller.filter(filter_id)
-      send Listener, {:filter, filter_id, event_signature, event_fields, pid}
+      send Listener, {:filter, filter_id, event_fields, pid}
     end
 
     def listen(callback) do
@@ -438,19 +438,50 @@ defmodule ExW3 do
       end
       listen(callback)
     end
+
+    defp extract_non_indexed_fields(data, names, signature) do
+      Enum.zip(names, ExW3.decode_event(data, signature)) |> Enum.into(%{})
+    end
+
+    defp format_log(log, event_attributes) do
+      non_indexed_fields =
+	extract_non_indexed_fields(
+	  Map.get(log, "data"),
+	  event_attributes[:non_indexed_names],
+	  event_attributes[:signature]
+	)
+
+      indexed_fields =
+      if length(log["topics"]) > 1 do
+	[ _head | tail ] = log["topics"]
+	decoded_topics = Enum.map(0..length(tail) - 1, fn i ->
+	  topic_type = Enum.at(event_attributes[:topic_types], i)
+	  topic_data = Enum.at(tail, i)	 
+
+	  {decoded} = ExW3.decode_data(topic_type, topic_data)
+
+	  decoded
+	end)
+
+	Enum.zip(event_attributes[:topic_names], decoded_topics) |> Enum.into(%{})
+      else
+	%{}
+      end
+
+      Map.merge(indexed_fields, non_indexed_fields)
+    end
     
     defp loop(state) do
       receive do
-	{:filter, filter_id, event_signature, event_fields, pid} ->
-	  loop(Map.put(state, filter_id, %{pid: pid, signature: event_signature, names: event_fields}))
+	{:filter, filter_id, event_attributes, pid} ->
+	  loop(Map.put(state, filter_id, %{pid: pid, event_attributes: event_attributes}))
 	{:event, filter_id, logs} ->
 	  filter_attributes = Map.get(state, filter_id)
+	  event_attributes = filter_attributes[:event_attributes]
+	  
 	  unless logs == [] do
 	    Enum.each(logs, fn log ->
-	      data = Map.get(log, "data")
-	      new_data = Enum.zip(filter_attributes[:names], ExW3.decode_event(data, filter_attributes[:signature])) |> Enum.into(%{})
-	      new_log = Map.put(log, "data", new_data)
-	      send filter_attributes[:pid], {:event, {filter_id, new_log}}
+	      send filter_attributes[:pid], {:event, {filter_id, format_log(log, event_attributes)}}
 	    end)
 	  end
 	  loop(state)
@@ -685,7 +716,7 @@ defmodule ExW3 do
       {:noreply, Map.put(state, name, contract_info ++ [address: address])} 
     end
 
-    def handle_cast({:register, {name, contract_info}}, state) do		     
+    def handle_cast({:register, {name, contract_info}}, state) do
       {:noreply, Map.put(state, name, add_helper(contract_info))}
     end
 
@@ -701,9 +732,10 @@ defmodule ExW3 do
       
       payload = Map.merge(%{address: contract_info[:address], topics: [contract_info[:event_names][event_name]]}, event_data)
       filter_id = ExW3.new_filter(payload)
-      event_signature = contract_info[:events][contract_info[:event_names][event_name]][:signature]
-      event_fields = contract_info[:events][contract_info[:event_names][event_name]][:non_indexed_names]
-      EventListener.filter(filter_id, event_signature, event_fields, other_pid)
+      event_attributes = contract_info[:events][contract_info[:event_names][event_name]]
+      
+      EventListener.filter(filter_id, event_attributes, other_pid)
+      
       {:reply, filter_id, Map.put(state, contract_name, contract_info ++ [event_name, filter_id])}
     end
 
@@ -763,17 +795,17 @@ defmodule ExW3 do
       formatted_logs =
         Enum.map(logs, fn log ->
           topic = Enum.at(log["topics"], 0)
-          event = Map.get(events, topic)
+          event_attributes = Map.get(events, topic)
 
-          if event do
-            non_indexed_fields = Enum.zip(event[:non_indexed_names], ExW3.decode_event(log["data"], event[:signature])) |> Enum.into(%{})
+          if event_attributes do
+            non_indexed_fields = Enum.zip(event_attributes[:non_indexed_names], ExW3.decode_event(log["data"], event_attributes[:signature])) |> Enum.into(%{})
 
 
 	    if length(log["topics"]) > 1 do
 	      [ _head | tail ] = log["topics"]
 	      decoded_topics = Enum.map(0..length(tail) - 1, fn i ->
 		
-		topic_type = Enum.at(event[:topic_types], i)
+		topic_type = Enum.at(event_attributes[:topic_types], i)
 		topic_data = Enum.at(tail, i)
 		
 		{decoded} = ExW3.decode_data(topic_type, topic_data)
@@ -781,7 +813,7 @@ defmodule ExW3 do
 		decoded
 	      end)
 
-	      indexed_fields = Enum.zip(event[:topic_names], decoded_topics) |> Enum.into(%{})
+	      indexed_fields = Enum.zip(event_attributes[:topic_names], decoded_topics) |> Enum.into(%{})
 	      Map.merge(indexed_fields, non_indexed_fields)
 	    else
 	      non_indexed_fields
