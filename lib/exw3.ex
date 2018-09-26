@@ -329,7 +329,6 @@ defmodule ExW3 do
     )
   end
 
-
   @spec encode_option(integer()) :: binary()
   @doc "Encodes options into Ethereum JSON RPC hex string"
   def encode_option(0), do: "0x0"
@@ -732,7 +731,26 @@ defmodule ExW3 do
     # Calls
 
     defp filter_topics_helper(event_signature, event_data, topic_types) do
-      if event_data[:topics] do
+      topics = event_data[:topics]
+      if topics do
+	formatted_topics =
+	  Enum.map(0..length(topics) - 1, fn i ->
+	    topic = Enum.at(topics, i)
+	    if topic do
+	      if is_list(topic) do
+		topic_type = Enum.at(topic_types, i)
+		Enum.map(topic, fn t ->
+		  "0x" <> (ExW3.encode_data(topic_type, [t]) |> Base.encode16(case: :lower))
+		end)
+	      else
+		topic_type = Enum.at(topic_types, i)
+		"0x" <> (ExW3.encode_data(topic_type, [topic]) |> Base.encode16(case: :lower))
+	      end		
+	    else
+	      topic
+	    end
+	  end)	
+	[event_signature] ++ formatted_topics
       else
 	[event_signature]
       end
@@ -747,12 +765,17 @@ defmodule ExW3 do
       end
 
       event_signature = contract_info[:event_names][event_name]
-      topic_types = contract_info[:events][event_signature]
-      IO.inspect topic_types
+      topic_types = contract_info[:events][event_signature][:topic_types]
 
       topics = filter_topics_helper(event_signature, event_data, topic_types)
       
-      payload = Map.merge(%{address: contract_info[:address], topics: topics}, event_data)
+      payload = Map.merge(
+	%{address: contract_info[:address], topics: topics},
+	Map.delete(event_data, :topics)
+      )
+
+      IO.inspect payload
+      
       filter_id = ExW3.new_filter(payload)
       event_attributes = contract_info[:events][contract_info[:event_names][event_name]]
       
