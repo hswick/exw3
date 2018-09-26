@@ -756,6 +756,41 @@ defmodule ExW3 do
       end
     end
 
+    def from_block_helper(event_data) do
+      if event_data[:fromBlock] do
+	new_from_block = 
+	if Enum.member?(["latest", "earliest", "pending"], event_data[:fromBlock]) do
+	  event_data[:fromBlock]
+	else
+	  ExW3.encode_data("(uint256)", [event_data[:fromBlock]])
+	end
+	Map.put(event_data, :fromBlock, new_from_block)
+      else
+	event_data
+      end      
+    end
+
+    defp param_helper(event_data, key) do
+      if event_data[key] do
+	new_param = 
+	if Enum.member?(["latest", "earliest", "pending"], event_data[key]) do
+	  event_data[key]
+	else
+	  "0x" <> (ExW3.encode_data("(uint256)", [event_data[key]]) |> Base.encode16(case: :lower))
+	end
+	Map.put(event_data,  key, new_param)
+      else
+	event_data
+      end
+    end
+
+    defp event_data_format_helper(event_data) do
+      event_data
+      |> param_helper(:fromBlock)
+      |> param_helper(:toBlock)
+      |> Map.delete(:topics)
+    end
+
     def handle_call({:filter, {contract_name, event_name, other_pid, event_data}}, _from, state) do
 
       contract_info = state[contract_name]
@@ -771,10 +806,8 @@ defmodule ExW3 do
       
       payload = Map.merge(
 	%{address: contract_info[:address], topics: topics},
-	Map.delete(event_data, :topics)
+	event_data_format_helper(event_data)
       )
-
-      IO.inspect payload
       
       filter_id = ExW3.new_filter(payload)
       event_attributes = contract_info[:events][contract_info[:event_names][event_name]]

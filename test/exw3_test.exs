@@ -268,7 +268,16 @@ defmodule EXW3Test do
 
     {:ok, agent} = Agent.start_link(fn -> [] end)
 
-    indexed_filter_id = ExW3.Contract.filter(:EventTester, "SimpleIndex", self(), %{topics: [nil, ["Hello, World", "Hello, World!"]]})
+    indexed_filter_id = ExW3.Contract.filter(
+      :EventTester,
+      "SimpleIndex",
+      self(),
+      %{
+	topics: [nil, ["Hello, World", "Hello, World!"]],
+	fromBlock: 1,
+	toBlock: "latest"
+      }
+    )
 
     {:ok, _tx_hash} =
       ExW3.Contract.send(
