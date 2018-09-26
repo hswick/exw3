@@ -730,8 +730,17 @@ defmodule ExW3 do
 
     # Calls
 
-    defp filter_topics_helper(event_signature, event_data, topic_types) do
-      topics = event_data[:topics]
+    defp filter_topics_helper(event_signature, event_data, topic_types, topic_names) do
+      
+      topics =
+      if is_map(event_data[:topics]) do
+	Enum.map(topic_names, fn name ->
+	  event_data[:topics][String.to_atom(name)]
+	end)
+      else
+	event_data[:topics]
+      end
+      
       if topics do
 	formatted_topics =
 	  Enum.map(0..length(topics) - 1, fn i ->
@@ -801,8 +810,9 @@ defmodule ExW3 do
 
       event_signature = contract_info[:event_names][event_name]
       topic_types = contract_info[:events][event_signature][:topic_types]
+      topic_names = contract_info[:events][event_signature][:topic_names]
 
-      topics = filter_topics_helper(event_signature, event_data, topic_types)
+      topics = filter_topics_helper(event_signature, event_data, topic_types, topic_names)
       
       payload = Map.merge(
 	%{address: contract_info[:address], topics: topics},

@@ -302,6 +302,62 @@ defmodule EXW3Test do
     assert Map.get(log_data, "num") == 46
     assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
+    ExW3.uninstall_filter(indexed_filter_id)    
+  end
+
+  test "starts a EventTester", context do
+    ExW3.Contract.register(:EventTester, abi: context[:event_tester_abi])
+
+    {:ok, address, _} =
+      ExW3.Contract.deploy(
+        :EventTester,
+        bin: ExW3.load_bin("test/examples/build/EventTester.bin"),
+        options: %{
+          gas: 300_000,
+          from: Enum.at(context[:accounts], 0)
+        }
+      )
+
+    ExW3.Contract.at(:EventTester, address)
+
+  # Test Indexing Indexed Events with Map params
+
+    ExW3.EventListener.start_link()    
+
+    {:ok, agent} = Agent.start_link(fn -> [] end)
+
+    indexed_filter_id = ExW3.Contract.filter(
+      :EventTester,
+      "SimpleIndex",
+      self(),
+      %{
+    	topics: %{num: 46, data: "Hello, World!"},
+      }
+    )
+
+    {:ok, _tx_hash} =
+      ExW3.Contract.send(
+    	:EventTester,
+    	:simpleIndex,
+    	["Hello, World!"],
+    	%{from: Enum.at(context[:accounts], 0), gas: 30_000}
+      )
+
+    receive do
+      {:event, {_filter_id, data}} ->
+    	Agent.update(agent, fn list -> [data | list] end)
+    after 3_000 ->
+    	raise "Never received event"
+    end
+
+    state = Agent.get(agent, fn list -> list end)
+    event_log = Enum.at(state, 0)
+    assert event_log |> is_map
+    log_data = Map.get(event_log, "data")
+    assert log_data |> is_map
+    assert Map.get(log_data, "num") == 46
+    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert Map.get(log_data, "otherNum") == 42
     ExW3.uninstall_filter(indexed_filter_id)
     
   end
