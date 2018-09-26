@@ -102,8 +102,9 @@ ExW3.EventListener.start_link
 # Assuming we have already registered our contract called :EventTester
 # We can then add a filter for the event listener to look out for by passing in the event name, and the process we want to receive the messages when an event is triggered.
 # For now we are going to use the main process, however, we could pass in a pid of a different process.
+# We can also optionally specify extra parameters like `:fromBlock`, and `:toBlock`
 
-filter_id = ExW3.Contract.filter(:EventTester, "Simple", self())
+filter_id = ExW3.Contract.filter(:EventTester, "Simple", self(), %{fromBlock: 42, toBlock: "latest"})
 
 # We can then wait for the event. Using the typical receive keyword we wait for the first instance of the event, and then continue with the rest of the code. This is useful for testing.
 receive do
@@ -134,6 +135,42 @@ end
 # You could do something similar with your own process, whether it is a simple Task or a more involved GenServer.
 ```
 
+## Listening for Indexed Events
+
+Ethereum allows for filtering events specific to its parameters using indexing. For all of the options see [here](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_newfilter)
+
+If you have written your event in Solidity like this:
+```
+    event SimpleIndex(uint256 indexed num, bytes32 indexed data, uint256 otherNum);
+```
+
+You can add filter on which logs will be returned back to the RPC client, based on the indexed fields. ExW3 allows for 2 ways of specifying these parameters or `topics` in two ways. The first, and probably more preferred way, is with a map:
+
+```elixir
+  indexed_filter_id = ExW3.Contract.filter(
+    :EventTester,
+    "SimpleIndex",
+    self(),
+    %{
+      topics: %{num: 46, data: "Hello, World!"},
+    }
+  )
+```
+
+The other option is with a list, but this is order dependent, and any values you don't want to specify must be represented with a `nil`.
+
+```elixir
+  indexed_filter_id = ExW3.Contract.filter(
+    :EventTester,
+    "SimpleIndex",
+    self(),
+    %{
+      topics: [nil, "Hello, World!"]
+    }
+  )
+```
+
+In this case we are skipping the `num` topic, and only filtering on the `data` parameter.
 
 
 # Compiling Solidity
