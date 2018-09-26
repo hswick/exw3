@@ -649,7 +649,7 @@ defmodule ExW3 do
 	    arg_count = Enum.count(arguments)
 	    input_types_count = Enum.count(input_types)
             if input_types_count != arg_count do
-                raise "Number of provided arguments to constructor is incorrect. Was given #{arg_count} args, was looking for #{input_types_count}."
+                raise "Number of provided arguments to constructor is incorrect. Was given #{arg_count} args, looking for #{input_types_count}."
             end
 
             bin <> (ExW3.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
@@ -731,6 +731,13 @@ defmodule ExW3 do
 
     # Calls
 
+    defp filter_topics_helper(event_signature, event_data, topic_types) do
+      if event_data[:topics] do
+      else
+	[event_signature]
+      end
+    end
+
     def handle_call({:filter, {contract_name, event_name, other_pid, event_data}}, _from, state) do
 
       contract_info = state[contract_name]
@@ -738,8 +745,14 @@ defmodule ExW3 do
       unless Process.whereis(Listener) do
 	raise "EventListener process not alive. Call ExW3.EventListener.start_link before using ExW3.Contract.subscribe"
       end
+
+      event_signature = contract_info[:event_names][event_name]
+      topic_types = contract_info[:events][event_signature]
+      IO.inspect topic_types
+
+      topics = filter_topics_helper(event_signature, event_data, topic_types)
       
-      payload = Map.merge(%{address: contract_info[:address], topics: [contract_info[:event_names][event_name]]}, event_data)
+      payload = Map.merge(%{address: contract_info[:address], topics: topics}, event_data)
       filter_id = ExW3.new_filter(payload)
       event_attributes = contract_info[:events][contract_info[:event_names][event_name]]
       

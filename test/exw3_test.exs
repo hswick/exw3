@@ -233,7 +233,7 @@ defmodule EXW3Test do
 
     ExW3.uninstall_filter(filter_id)
 
-    # # Test indexed events
+    # Test indexed events
 
     {:ok, agent} = Agent.start_link(fn -> [] end)
 
@@ -263,6 +263,38 @@ defmodule EXW3Test do
     assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
     ExW3.uninstall_filter(indexed_filter_id)
+
+    # Test Indexing Indexed Events
+
+    {:ok, agent} = Agent.start_link(fn -> [] end)
+
+    indexed_filter_id = ExW3.Contract.filter(:EventTester, "SimpleIndex", self(), %{topics: [46, "Hello, World!"]})
+
+    {:ok, _tx_hash} =
+      ExW3.Contract.send(
+    	:EventTester,
+    	:simpleIndex,
+    	["Hello, World!"],
+    	%{from: Enum.at(context[:accounts], 0), gas: 30_000}
+      )
+
+    receive do
+      {:event, {_filter_id, data}} ->
+    	Agent.update(agent, fn list -> [data | list] end)
+    after 3_000 ->
+    	raise "Never received event"
+    end
+
+    state = Agent.get(agent, fn list -> list end)
+    event_log = Enum.at(state, 0)
+    assert event_log |> is_map
+    log_data = Map.get(event_log, "data")
+    assert log_data |> is_map
+    assert Map.get(log_data, "num") == 46
+    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert Map.get(log_data, "otherNum") == 42
+    ExW3.uninstall_filter(indexed_filter_id)
+    
   end
 
   test "starts a Contract GenServer for Complex contract", context do
