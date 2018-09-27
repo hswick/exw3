@@ -87,7 +87,16 @@ iex(10)> ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(accounts,
 {:ok, "0x88838e84a401a1d6162290a1a765507c4a83f5e050658a83992a912f42149ca5"}
 iex(11)> ExW3.Contract.call(:SimpleStorage, :get)
 {:ok, 1}
-```  
+```
+
+## Asynchronous
+
+ExW3 now provides async versions of `call` and `send`. They both return a `Task` that can be awaited on.
+
+```elixir
+  t = ExW3.Contract.call_async(:SimpleStorage, :get)
+  {:ok, data} = Task.await(t)
+```
 
 ## Listening for Events
 
