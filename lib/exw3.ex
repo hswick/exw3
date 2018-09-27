@@ -1,7 +1,6 @@
 defmodule ExW3 do
+  Module.register_attribute(__MODULE__, :unit_map, persist: true, accumulate: false)
 
-  Module.register_attribute __MODULE__, :unit_map, persist: true, accumulate: false
-  
   @unit_map %{
     :noether => 0,
     :wei => 1,
@@ -42,7 +41,7 @@ defmodule ExW3 do
     if @unit_map[key] do
       num * @unit_map[key]
     else
-      throw "#{key} not valid unit"
+      throw("#{key} not valid unit")
     end
   end
 
@@ -50,7 +49,7 @@ defmodule ExW3 do
     if @unit_map[key] do
       num / @unit_map[key]
     else
-      throw "#{key} not valid unit"
+      throw("#{key} not valid unit")
     end
   end
 
@@ -59,7 +58,7 @@ defmodule ExW3 do
   def keccak256(string) do
     Enum.join(["0x", ExthCrypto.Hash.Keccak.kec(string) |> Base.encode16(case: :lower)], "")
   end
-  
+
   @spec bytes_to_string(binary()) :: binary()
   @doc "converts Ethereum style bytes to string"
   def bytes_to_string(bytes) do
@@ -75,7 +74,7 @@ defmodule ExW3 do
     address
     |> String.slice(2..-1)
     |> Base.decode16!(case: :lower)
-    |> :binary.decode_unsigned
+    |> :binary.decode_unsigned()
   end
 
   @spec to_address(binary()) :: binary()
@@ -89,25 +88,29 @@ defmodule ExW3 do
   def to_checksum_address(address) do
     address = String.replace(address, ~r/^0x/, "")
 
-    hash = ExthCrypto.Hash.Keccak.kec(String.downcase(address))
-           |> Base.encode16(case: :lower)
-           |> String.replace(~r/^0x/, "")
+    hash =
+      ExthCrypto.Hash.Keccak.kec(String.downcase(address))
+      |> Base.encode16(case: :lower)
+      |> String.replace(~r/^0x/, "")
 
-    keccak_hash_list = hash
-    |> String.split("", trim: true)
-    |> Enum.map(fn (x) -> elem(Integer.parse(x, 16),0) end)
+    keccak_hash_list =
+      hash
+      |> String.split("", trim: true)
+      |> Enum.map(fn x -> elem(Integer.parse(x, 16), 0) end)
 
-    list_arr = for n <- 0..String.length(address)-1 do
-      number = Enum.at(keccak_hash_list, n)
-      cond do
-        number >= 8 -> String.upcase(String.at(address, n))
-        true -> String.downcase(String.at(address, n))
+    list_arr =
+      for n <- 0..(String.length(address) - 1) do
+        number = Enum.at(keccak_hash_list, n)
+
+        cond do
+          number >= 8 -> String.upcase(String.at(address, n))
+          true -> String.downcase(String.at(address, n))
+        end
       end
-    end
 
     "0x" <> List.to_string(list_arr)
   end
-	
+
   @doc "checks if the address is a valid checksummed address"
   @spec is_valid_checksum_address(binary()) :: boolean()
   def is_valid_checksum_address(address) do
@@ -242,11 +245,9 @@ defmodule ExW3 do
   @spec reformat_abi([]) :: %{}
   @doc "Reformats abi from list to map with event and function names as keys"
   def reformat_abi(abi) do
-
     abi
     |> Enum.map(&map_abi/1)
-    |> Map.new
-
+    |> Map.new()
   end
 
   @spec load_abi(binary()) :: []
@@ -269,6 +270,14 @@ defmodule ExW3 do
       {:ok, bin} -> bin
       err -> err
     end
+  end
+
+  @spec decode_data(binary(), binary()) :: any()
+  @doc "Decodes data based on given type signature"
+  def decode_data(types_signature, data) do
+    {:ok, trim_data} = String.slice(data, 2..String.length(data)) |> Base.decode16(case: :lower)
+
+    ABI.decode(types_signature, trim_data) |> List.first()
   end
 
   @spec decode_output(%{}, binary(), binary()) :: []
@@ -320,13 +329,16 @@ defmodule ExW3 do
     )
   end
 
-
   @spec encode_option(integer()) :: binary()
   @doc "Encodes options into Ethereum JSON RPC hex string"
   def encode_option(0), do: "0x0"
 
   def encode_option(value) do
-    "0x" <> (value |> :binary.encode_unsigned() |> Base.encode16(case: :lower) |> String.trim_leading("0"))
+    "0x" <>
+      (value
+       |> :binary.encode_unsigned()
+       |> Base.encode16(case: :lower)
+       |> String.trim_leading("0"))
   end
 
   @spec encode_method_call(%{}, binary(), []) :: binary()
@@ -385,7 +397,8 @@ defmodule ExW3 do
 
     @impl true
     def init(state) do
-      schedule_work() # Schedule work to be performed on start
+      # Schedule work to be performed on start
+      schedule_work()
       {:ok, state}
     end
 
@@ -397,19 +410,21 @@ defmodule ExW3 do
     @impl true
     def handle_info(:work, state) do
       # Do the desired work here
-      Enum.each state, fn filter_id ->
-	send Listener, {:event, filter_id, ExW3.get_filter_changes(filter_id)}
-      end
-      
-      schedule_work() # Reschedule once more
+      Enum.each(state, fn filter_id ->
+        send(Listener, {:event, filter_id, ExW3.get_filter_changes(filter_id)})
+      end)
+
+      # Reschedule once more
+      schedule_work()
       {:noreply, state}
     end
 
     defp schedule_work() do
-      Process.send_after(self(), :work, 500) # In 1/2 sec
+      # In 1/2 sec
+      Process.send_after(self(), :work, 500)
     end
   end
-  
+
   defmodule EventListener do
     def start_link do
       Poller.start_link()
@@ -418,33 +433,85 @@ defmodule ExW3 do
       :ok
     end
 
-    def filter(filter_id, event_signature, event_fields, pid) do
+    def filter(filter_id, event_fields, pid) do
       Poller.filter(filter_id)
-      send Listener, {:filter, filter_id, event_signature, event_fields, pid}
+      send(Listener, {:filter, filter_id, event_fields, pid})
     end
 
     def listen(callback) do
       receive do
-	{:event, result} -> apply callback, [result]
+        {:event, result} -> apply(callback, [result])
       end
+
       listen(callback)
     end
-    
+
+    defp extract_non_indexed_fields(data, names, signature) do
+      Enum.zip(names, ExW3.decode_event(data, signature)) |> Enum.into(%{})
+    end
+
+    defp format_log_data(log, event_attributes) do
+      non_indexed_fields =
+        extract_non_indexed_fields(
+          Map.get(log, "data"),
+          event_attributes[:non_indexed_names],
+          event_attributes[:signature]
+        )
+
+      indexed_fields =
+        if length(log["topics"]) > 1 do
+          [_head | tail] = log["topics"]
+
+          decoded_topics =
+            Enum.map(0..(length(tail) - 1), fn i ->
+              topic_type = Enum.at(event_attributes[:topic_types], i)
+              topic_data = Enum.at(tail, i)
+
+              {decoded} = ExW3.decode_data(topic_type, topic_data)
+
+              decoded
+            end)
+
+          Enum.zip(event_attributes[:topic_names], decoded_topics) |> Enum.into(%{})
+        else
+          %{}
+        end
+
+      new_data = Map.merge(indexed_fields, non_indexed_fields)
+
+      Map.put(log, "data", new_data)
+    end
+
     defp loop(state) do
       receive do
-	{:filter, filter_id, event_signature, event_fields, pid} ->
-	  loop(Map.put(state, filter_id, %{pid: pid, signature: event_signature, names: event_fields}))
-	{:event, filter_id, logs} ->
-	  filter_attributes = Map.get(state, filter_id)
-	  unless logs == [] do
-	    Enum.each(logs, fn log ->
-	      data = Map.get(log, "data")
-	      new_data = Enum.zip(filter_attributes[:names], ExW3.decode_event(data, filter_attributes[:signature])) |> Enum.into(%{})
-	      new_log = Map.put(log, "data", new_data)
-	      send filter_attributes[:pid], {:event, {filter_id, new_log}}
-	    end)
-	  end
-	  loop(state)
+        {:filter, filter_id, event_attributes, pid} ->
+          loop(Map.put(state, filter_id, %{pid: pid, event_attributes: event_attributes}))
+
+        {:event, filter_id, logs} ->
+          filter_attributes = Map.get(state, filter_id)
+          event_attributes = filter_attributes[:event_attributes]
+
+          unless logs == [] do
+            Enum.each(logs, fn log ->
+              formatted_log =
+                Enum.reduce(
+                  [
+                    ExW3.keys_to_decimal(log, [
+                      "blockNumber",
+                      "logIndex",
+                      "transactionIndex",
+                      "transactionLogIndex"
+                    ]),
+                    format_log_data(log, event_attributes)
+                  ],
+                  &Map.merge/2
+                )
+
+              send(filter_attributes[:pid], {:event, {filter_id, formatted_log}})
+            end)
+          end
+
+          loop(state)
       end
     end
   end
@@ -496,6 +563,22 @@ defmodule ExW3 do
       GenServer.call(ContractManager, {:send, {contract_name, method_name, args, options}})
     end
 
+    @spec call_async(keyword(), keyword(), []) :: {:ok, any()}
+    @doc "Use a Contract's method with an eth_call. Returns a Task to be awaited."
+    def call_async(contract_name, method_name, args \\ []) do
+      Task.async(fn ->
+        GenServer.call(ContractManager, {:call, {contract_name, method_name, args}})
+      end)
+    end
+
+    @spec send_async(keyword(), keyword(), [], %{}) :: {:ok, binary()}
+    @doc "Use a Contract's method with an eth_sendTransaction. Returns a Task to be awaited."
+    def send_async(contract_name, method_name, args, options) do
+      Task.async(fn ->
+        GenServer.call(ContractManager, {:send, {contract_name, method_name, args, options}})
+      end)
+    end
+
     @spec tx_receipt(keyword(), binary()) :: %{}
     @doc "Returns a formatted transaction receipt for the given transaction hash(id)"
     def tx_receipt(contract_name, tx_hash) do
@@ -503,13 +586,31 @@ defmodule ExW3 do
     end
 
     def filter(contract_name, event_name, other_pid, event_data \\ %{}) do
-      GenServer.call(ContractManager, {:filter, {contract_name, event_name, other_pid, event_data}})
+      GenServer.call(
+        ContractManager,
+        {:filter, {contract_name, event_name, other_pid, event_data}}
+      )
     end
 
     # Server
 
     def init(state) do
-      {:ok, state}      
+      {:ok, state}
+    end
+
+    defp data_signature_helper(name, fields) do
+      non_indexed_types = Enum.map(fields, &Map.get(&1, "type"))
+      Enum.join([name, "(", Enum.join(non_indexed_types, ","), ")"])
+    end
+
+    defp topic_types_helper(fields) do
+      if length(fields) > 0 do
+        Enum.map(fields, fn field ->
+          "(#{field["type"]})"
+        end)
+      else
+        []
+      end
     end
 
     defp init_events(abi) do
@@ -521,23 +622,51 @@ defmodule ExW3 do
       names_and_signature_types_map =
         Enum.map(events, fn {name, v} ->
           types = Enum.map(v["inputs"], &Map.get(&1, "type"))
-          names = Enum.map(v["inputs"], &Map.get(&1, "name"))
           signature = Enum.join([name, "(", Enum.join(types, ","), ")"])
 
-	  encoded_event_signature = "0x#{ExW3.encode_event(signature)}"
+          encoded_event_signature = "0x#{ExW3.encode_event(signature)}"
 
-          {{encoded_event_signature, %{signature: signature, names: names}}, {name, encoded_event_signature}}
+          indexed_fields =
+            Enum.filter(v["inputs"], fn input ->
+              input["indexed"]
+            end)
+
+          indexed_names =
+            Enum.map(indexed_fields, fn field ->
+              field["name"]
+            end)
+
+          non_indexed_fields =
+            Enum.filter(v["inputs"], fn input ->
+              !input["indexed"]
+            end)
+
+          non_indexed_names =
+            Enum.map(non_indexed_fields, fn field ->
+              field["name"]
+            end)
+
+          data_signature = data_signature_helper(name, non_indexed_fields)
+
+          event_attributes = %{
+            signature: data_signature,
+            non_indexed_names: non_indexed_names,
+            topic_types: topic_types_helper(indexed_fields),
+            topic_names: indexed_names
+          }
+
+          {{encoded_event_signature, event_attributes}, {name, encoded_event_signature}}
         end)
 
       signature_types_map =
-	Enum.map(names_and_signature_types_map, fn {signature_types, _} ->
-	  signature_types
-	end)
+        Enum.map(names_and_signature_types_map, fn {signature_types, _} ->
+          signature_types
+        end)
 
       names_map =
-	Enum.map(names_and_signature_types_map, fn {_, names} ->
-	  names
-	end)
+        Enum.map(names_and_signature_types_map, fn {_, names} ->
+          names
+        end)
 
       [events: Enum.into(signature_types_map, %{}), event_names: Enum.into(names_map, %{})]
     end
@@ -557,15 +686,18 @@ defmodule ExW3 do
             input_types = Enum.map(constructor["inputs"], fn x -> x["type"] end)
             types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
 
-	    arg_count = Enum.count(arguments)
-	    input_types_count = Enum.count(input_types)
+            arg_count = Enum.count(arguments)
+            input_types_count = Enum.count(input_types)
+
             if input_types_count != arg_count do
-                raise "Number of provided arguments to constructor is incorrect. Was given #{arg_count} args, was looking for #{input_types_count}."
+              raise "Number of provided arguments to constructor is incorrect. Was given #{
+                      arg_count
+                    } args, looking for #{input_types_count}."
             end
 
             bin <> (ExW3.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
           else
-            #IO.warn("Could not find a constructor")
+            # IO.warn("Could not find a constructor")
             bin
           end
         else
@@ -602,6 +734,7 @@ defmodule ExW3 do
 
     def eth_send_helper(address, abi, method_name, args, options) do
       gas = ExW3.encode_option(options[:gas])
+
       Ethereumex.HttpClient.eth_send_transaction(
         Map.merge(
           %{
@@ -615,7 +748,7 @@ defmodule ExW3 do
 
     defp add_helper(contract_info) do
       if contract_info[:abi] do
-	contract_info ++ init_events(contract_info[:abi])
+        contract_info ++ init_events(contract_info[:abi])
       else
         raise "ABI not provided upon initialization"
       end
@@ -625,7 +758,7 @@ defmodule ExW3 do
 
     defp check_option(nil, error_atom), do: {:error, error_atom}
     defp check_option([], error_atom), do: {:error, error_atom}
-    defp check_option([head | _tail], _atom) when head != nil,  do: {:ok, head}
+    defp check_option([head | _tail], _atom) when head != nil, do: {:ok, head}
     defp check_option([_head | tail], atom), do: check_option(tail, atom)
     defp check_option(value, _atom), do: {:ok, value}
 
@@ -633,91 +766,208 @@ defmodule ExW3 do
 
     def handle_cast({:at, {name, address}}, state) do
       contract_info = state[name]
-      {:noreply, Map.put(state, name, contract_info ++ [address: address])} 
+      {:noreply, Map.put(state, name, contract_info ++ [address: address])}
     end
 
-    def handle_cast({:register, {name, contract_info}}, state) do		     
+    def handle_cast({:register, {name, contract_info}}, state) do
       {:noreply, Map.put(state, name, add_helper(contract_info))}
     end
 
     # Calls
 
-    def handle_call({:filter, {contract_name, event_name, other_pid, event_data}}, _from, state) do
+    defp filter_topics_helper(event_signature, event_data, topic_types, topic_names) do
+      topics =
+        if is_map(event_data[:topics]) do
+          Enum.map(topic_names, fn name ->
+            event_data[:topics][String.to_atom(name)]
+          end)
+        else
+          event_data[:topics]
+        end
 
-      contract_info = state[contract_name]
-      
-      unless Process.whereis(Listener) do
-	raise "EventListener process not alive. Call ExW3.EventListener.start_link before using ExW3.Contract.subscribe"
+      if topics do
+        formatted_topics =
+          Enum.map(0..(length(topics) - 1), fn i ->
+            topic = Enum.at(topics, i)
+
+            if topic do
+              if is_list(topic) do
+                topic_type = Enum.at(topic_types, i)
+
+                Enum.map(topic, fn t ->
+                  "0x" <> (ExW3.encode_data(topic_type, [t]) |> Base.encode16(case: :lower))
+                end)
+              else
+                topic_type = Enum.at(topic_types, i)
+                "0x" <> (ExW3.encode_data(topic_type, [topic]) |> Base.encode16(case: :lower))
+              end
+            else
+              topic
+            end
+          end)
+
+        [event_signature] ++ formatted_topics
+      else
+        [event_signature]
       end
-      
-      payload = Map.merge(%{address: contract_info[:address], topics: [contract_info[:event_names][event_name]]}, event_data)
+    end
+
+    def from_block_helper(event_data) do
+      if event_data[:fromBlock] do
+        new_from_block =
+          if Enum.member?(["latest", "earliest", "pending"], event_data[:fromBlock]) do
+            event_data[:fromBlock]
+          else
+            ExW3.encode_data("(uint256)", [event_data[:fromBlock]])
+          end
+
+        Map.put(event_data, :fromBlock, new_from_block)
+      else
+        event_data
+      end
+    end
+
+    defp param_helper(event_data, key) do
+      if event_data[key] do
+        new_param =
+          if Enum.member?(["latest", "earliest", "pending"], event_data[key]) do
+            event_data[key]
+          else
+            "0x" <>
+              (ExW3.encode_data("(uint256)", [event_data[key]]) |> Base.encode16(case: :lower))
+          end
+
+        Map.put(event_data, key, new_param)
+      else
+        event_data
+      end
+    end
+
+    defp event_data_format_helper(event_data) do
+      event_data
+      |> param_helper(:fromBlock)
+      |> param_helper(:toBlock)
+      |> Map.delete(:topics)
+    end
+
+    def handle_call({:filter, {contract_name, event_name, other_pid, event_data}}, _from, state) do
+      contract_info = state[contract_name]
+
+      unless Process.whereis(Listener) do
+        raise "EventListener process not alive. Call ExW3.EventListener.start_link before using ExW3.Contract.subscribe"
+      end
+
+      event_signature = contract_info[:event_names][event_name]
+      topic_types = contract_info[:events][event_signature][:topic_types]
+      topic_names = contract_info[:events][event_signature][:topic_names]
+
+      topics = filter_topics_helper(event_signature, event_data, topic_types, topic_names)
+
+      payload =
+        Map.merge(
+          %{address: contract_info[:address], topics: topics},
+          event_data_format_helper(event_data)
+        )
+
       filter_id = ExW3.new_filter(payload)
-      event_signature = contract_info[:events][contract_info[:event_names][event_name]][:signature]
-      event_fields = contract_info[:events][contract_info[:event_names][event_name]][:names]
-      EventListener.filter(filter_id, event_signature, event_fields, other_pid)
+      event_attributes = contract_info[:events][contract_info[:event_names][event_name]]
+
+      EventListener.filter(filter_id, event_attributes, other_pid)
+
       {:reply, filter_id, Map.put(state, contract_name, contract_info ++ [event_name, filter_id])}
     end
 
     def handle_call({:deploy, {name, args}}, _from, state) do
-
       contract_info = state[name]
-      
+
       with {:ok, _} <- check_option(args[:options][:from], :missing_sender),
-           {:ok,_} <- check_option(args[:options][:gas], :missing_gas),
-           {:ok, bin} <- check_option([state[:bin], args[:bin]], :missing_binary)
-	do
+           {:ok, _} <- check_option(args[:options][:gas], :missing_gas),
+           {:ok, bin} <- check_option([state[:bin], args[:bin]], :missing_binary) do
         {contract_addr, tx_hash} = deploy_helper(bin, contract_info[:abi], args)
         result = {:ok, contract_addr, tx_hash}
-        {:reply, result , state}
-	else
-          err -> {:reply, err, state}
+        {:reply, result, state}
+      else
+        err -> {:reply, err, state}
       end
     end
 
-    def handle_call({:address, name},  _from, state) do
+    def handle_call({:address, name}, _from, state) do
       {:reply, state[name][:address], state}
     end
 
     def handle_call({:call, {contract_name, method_name, args}}, _from, state) do
       contract_info = state[contract_name]
-      
-      with {:ok, address} <- check_option(contract_info[:address], :missing_address)
-        do
-          result = eth_call_helper(address, contract_info[:abi], Atom.to_string(method_name), args)
-         {:reply, result, state}
-        else
-         err -> {:reply, err, state}
+
+      with {:ok, address} <- check_option(contract_info[:address], :missing_address) do
+        result = eth_call_helper(address, contract_info[:abi], Atom.to_string(method_name), args)
+        {:reply, result, state}
+      else
+        err -> {:reply, err, state}
       end
     end
 
     def handle_call({:send, {contract_name, method_name, args, options}}, _from, state) do
       contract_info = state[contract_name]
+
       with {:ok, address} <- check_option(contract_info[:address], :missing_address),
            {:ok, _} <- check_option(options[:from], :missing_sender),
-           {:ok, _} <- check_option(options[:gas], :missing_gas)
-        do
-          result = eth_send_helper(address, contract_info[:abi], Atom.to_string(method_name), args, options)
-          {:reply, result, state}
-        else
-          err -> {:reply, err, state}
+           {:ok, _} <- check_option(options[:gas], :missing_gas) do
+        result =
+          eth_send_helper(
+            address,
+            contract_info[:abi],
+            Atom.to_string(method_name),
+            args,
+            options
+          )
+
+        {:reply, result, state}
+      else
+        err -> {:reply, err, state}
       end
     end
 
     def handle_call({:tx_receipt, {contract_name, tx_hash}}, _from, state) do
       contract_info = state[contract_name]
-      
+
       receipt = ExW3.tx_receipt(tx_hash)
+
       events = contract_info[:events]
       logs = receipt["logs"]
 
       formatted_logs =
         Enum.map(logs, fn log ->
           topic = Enum.at(log["topics"], 0)
-          event = Map.get(events, topic)
+          event_attributes = Map.get(events, topic)
 
-          if event do
-            Enum.zip(event[:names], ExW3.decode_event(log["data"], event[:signature]))
-            |> Enum.into(%{})
+          if event_attributes do
+            non_indexed_fields =
+              Enum.zip(
+                event_attributes[:non_indexed_names],
+                ExW3.decode_event(log["data"], event_attributes[:signature])
+              )
+              |> Enum.into(%{})
+
+            if length(log["topics"]) > 1 do
+              [_head | tail] = log["topics"]
+
+              decoded_topics =
+                Enum.map(0..(length(tail) - 1), fn i ->
+                  topic_type = Enum.at(event_attributes[:topic_types], i)
+                  topic_data = Enum.at(tail, i)
+
+                  {decoded} = ExW3.decode_data(topic_type, topic_data)
+
+                  decoded
+                end)
+
+              indexed_fields =
+                Enum.zip(event_attributes[:topic_names], decoded_topics) |> Enum.into(%{})
+
+              Map.merge(indexed_fields, non_indexed_fields)
+            else
+              non_indexed_fields
+            end
           else
             nil
           end
@@ -726,5 +976,4 @@ defmodule ExW3 do
       {:reply, {:ok, {receipt, formatted_logs}}, state}
     end
   end
-  
 end

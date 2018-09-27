@@ -6,7 +6,7 @@
 
 ```elixir
 def deps do
-  [{:exw3, "~> 0.1.6"}]
+  [{:exw3, "~> 0.2.0"}]
 end
 ```
 ## Overview
@@ -44,7 +44,7 @@ Currently, ExW3 supports a handful of json rpc commands. Mostly just the useful 
 
 Check out the [documentation](https://hexdocs.pm/exw3/ExW3.html)
 
-```
+```elixir
 iex(1)> accounts = ExW3.accounts()
 ["0x00a329c0648769a73afac7f9381e08fb43dbea72"]
 iex(2)> ExW3.balance(Enum.at(accounts, 0))
@@ -87,7 +87,16 @@ iex(10)> ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(accounts,
 {:ok, "0x88838e84a401a1d6162290a1a765507c4a83f5e050658a83992a912f42149ca5"}
 iex(11)> ExW3.Contract.call(:SimpleStorage, :get)
 {:ok, 1}
-```  
+```
+
+## Asynchronous
+
+ExW3 now provides async versions of `call` and `send`. They both return a `Task` that can be awaited on.
+
+```elixir
+  t = ExW3.Contract.call_async(:SimpleStorage, :get)
+  {:ok, data} = Task.await(t)
+```
 
 ## Listening for Events
 
@@ -102,8 +111,9 @@ ExW3.EventListener.start_link
 # Assuming we have already registered our contract called :EventTester
 # We can then add a filter for the event listener to look out for by passing in the event name, and the process we want to receive the messages when an event is triggered.
 # For now we are going to use the main process, however, we could pass in a pid of a different process.
+# We can also optionally specify extra parameters like `:fromBlock`, and `:toBlock`
 
-filter_id = ExW3.Contract.filter(:EventTester, "Simple", self())
+filter_id = ExW3.Contract.filter(:EventTester, "Simple", self(), %{fromBlock: 42, toBlock: "latest"})
 
 # We can then wait for the event. Using the typical receive keyword we wait for the first instance of the event, and then continue with the rest of the code. This is useful for testing.
 receive do
@@ -134,6 +144,42 @@ end
 # You could do something similar with your own process, whether it is a simple Task or a more involved GenServer.
 ```
 
+## Listening for Indexed Events
+
+Ethereum allows for filtering events specific to its parameters using indexing. For all of the options see [here](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_newfilter)
+
+If you have written your event in Solidity like this:
+```
+    event SimpleIndex(uint256 indexed num, bytes32 indexed data, uint256 otherNum);
+```
+
+You can add filter on which logs will be returned back to the RPC client, based on the indexed fields. ExW3 allows for 2 ways of specifying these parameters or `topics` in two ways. The first, and probably more preferred way, is with a map:
+
+```elixir
+  indexed_filter_id = ExW3.Contract.filter(
+    :EventTester,
+    "SimpleIndex",
+    self(),
+    %{
+      topics: %{num: 46, data: "Hello, World!"},
+    }
+  )
+```
+
+The other option is with a list, but this is order dependent, and any values you don't want to specify must be represented with a `nil`.
+
+```elixir
+  indexed_filter_id = ExW3.Contract.filter(
+    :EventTester,
+    "SimpleIndex",
+    self(),
+    %{
+      topics: [nil, "Hello, World!"]
+    }
+  )
+```
+
+In this case we are skipping the `num` topic, and only filtering on the `data` parameter.
 
 
 # Compiling Solidity
