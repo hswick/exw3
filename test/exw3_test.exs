@@ -3,8 +3,8 @@ defmodule EXW3Test do
   doctest ExW3
 
   setup_all do
-    ExW3.Contract.start_link
-    
+    ExW3.Contract.start_link()
+
     %{
       simple_storage_abi: ExW3.load_abi("test/examples/build/SimpleStorage.abi"),
       array_tester_abi: ExW3.load_abi("test/examples/build/ArrayTester.abi"),
@@ -32,7 +32,7 @@ defmodule EXW3Test do
   end
 
   # Only works with ganache-cli
-  
+
   # test "mines a block" do
   #   block_number = ExW3.block_number()
   #   ExW3.mine()
@@ -52,21 +52,19 @@ defmodule EXW3Test do
     assert hash == "0x41b1a0649752af1b28b3dc29a1556eee781e4a4c3a1f7f53f90fa834de098c4d"
 
     num_bytes =
-      hash |>
-      String.slice(2..-1) |>
-      byte_size
+      hash
+      |> String.slice(2..-1)
+      |> byte_size
 
     assert trunc(num_bytes / 2) == 32
   end
 
   test "starts a Contract GenServer for simple storage contract", context do
-    
-    
     ExW3.Contract.register(:SimpleStorage, abi: context[:simple_storage_abi])
 
     {:ok, address, _} =
       ExW3.Contract.deploy(
-	:SimpleStorage,
+        :SimpleStorage,
         bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
@@ -83,7 +81,10 @@ defmodule EXW3Test do
 
     assert data == 0
 
-    ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0), gas: 50_000})
+    ExW3.Contract.send(:SimpleStorage, :set, [1], %{
+      from: Enum.at(context[:accounts], 0),
+      gas: 50_000
+    })
 
     {:ok, data} = ExW3.Contract.call(:SimpleStorage, :get)
 
@@ -137,8 +138,8 @@ defmodule EXW3Test do
 
     {:ok, tx_hash} =
       ExW3.Contract.send(:EventTester, :simple, ["Hello, World!"], %{
-            from: Enum.at(context[:accounts], 0),
-	    gas: 30_000
+        from: Enum.at(context[:accounts], 0),
+        gas: 30_000
       })
 
     {:ok, {receipt, logs}} = ExW3.Contract.tx_receipt(:EventTester, tx_hash)
@@ -155,9 +156,9 @@ defmodule EXW3Test do
 
     {:ok, tx_hash2} =
       ExW3.Contract.send(:EventTester, :simpleIndex, ["Hello, World!"], %{
-	    from: Enum.at(context[:accounts], 0),
-	    gas: 30_000
-			 })
+        from: Enum.at(context[:accounts], 0),
+        gas: 30_000
+      })
 
     {:ok, {_receipt, logs}} = ExW3.Contract.tx_receipt(:EventTester, tx_hash2)
 
@@ -179,7 +180,7 @@ defmodule EXW3Test do
       logs
       |> Enum.at(0)
       |> Map.get("data")
-      |> ExW3.bytes_to_string
+      |> ExW3.bytes_to_string()
 
     assert data == "Hello, World!"
   end
@@ -200,7 +201,7 @@ defmodule EXW3Test do
     ExW3.Contract.at(:EventTester, address)
 
     {:ok, agent} = Agent.start_link(fn -> [] end)
-  
+
     ExW3.EventListener.start_link()
 
     # Test non indexed events
@@ -209,17 +210,18 @@ defmodule EXW3Test do
 
     {:ok, _tx_hash} =
       ExW3.Contract.send(
-	:EventTester,
-	:simple,
-	["Hello, World!"],
-	%{from: Enum.at(context[:accounts], 0), gas: 30_000}
+        :EventTester,
+        :simple,
+        ["Hello, World!"],
+        %{from: Enum.at(context[:accounts], 0), gas: 30_000}
       )
-  
+
     receive do
       {:event, {_filter_id, data}} ->
-	Agent.update(agent, fn list -> [data | list] end)
-    after 3_000 ->
-	raise "Never received event"
+        Agent.update(agent, fn list -> [data | list] end)
+    after
+      3_000 ->
+        raise "Never received event"
     end
 
     state = Agent.get(agent, fn list -> list end)
@@ -241,17 +243,18 @@ defmodule EXW3Test do
 
     {:ok, _tx_hash} =
       ExW3.Contract.send(
-    	:EventTester,
-    	:simpleIndex,
-    	["Hello, World!"],
-    	%{from: Enum.at(context[:accounts], 0), gas: 30_000}
+        :EventTester,
+        :simpleIndex,
+        ["Hello, World!"],
+        %{from: Enum.at(context[:accounts], 0), gas: 30_000}
       )
 
     receive do
       {:event, {_filter_id, data}} ->
-    	Agent.update(agent, fn list -> [data | list] end)
-    after 3_000 ->
-    	raise "Never received event"
+        Agent.update(agent, fn list -> [data | list] end)
+    after
+      3_000 ->
+        raise "Never received event"
     end
 
     state = Agent.get(agent, fn list -> list end)
@@ -268,30 +271,32 @@ defmodule EXW3Test do
 
     {:ok, agent} = Agent.start_link(fn -> [] end)
 
-    indexed_filter_id = ExW3.Contract.filter(
-      :EventTester,
-      "SimpleIndex",
-      self(),
-      %{
-	topics: [nil, ["Hello, World", "Hello, World!"]],
-	fromBlock: 1,
-	toBlock: "latest"
-      }
-    )
+    indexed_filter_id =
+      ExW3.Contract.filter(
+        :EventTester,
+        "SimpleIndex",
+        self(),
+        %{
+          topics: [nil, ["Hello, World", "Hello, World!"]],
+          fromBlock: 1,
+          toBlock: "latest"
+        }
+      )
 
     {:ok, _tx_hash} =
       ExW3.Contract.send(
-    	:EventTester,
-    	:simpleIndex,
-    	["Hello, World!"],
-    	%{from: Enum.at(context[:accounts], 0), gas: 30_000}
+        :EventTester,
+        :simpleIndex,
+        ["Hello, World!"],
+        %{from: Enum.at(context[:accounts], 0), gas: 30_000}
       )
 
     receive do
       {:event, {_filter_id, data}} ->
-    	Agent.update(agent, fn list -> [data | list] end)
-    after 3_000 ->
-    	raise "Never received event"
+        Agent.update(agent, fn list -> [data | list] end)
+    after
+      3_000 ->
+        raise "Never received event"
     end
 
     state = Agent.get(agent, fn list -> list end)
@@ -302,7 +307,7 @@ defmodule EXW3Test do
     assert Map.get(log_data, "num") == 46
     assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
-    ExW3.uninstall_filter(indexed_filter_id)    
+    ExW3.uninstall_filter(indexed_filter_id)
   end
 
   test "starts a EventTester", context do
@@ -320,34 +325,36 @@ defmodule EXW3Test do
 
     ExW3.Contract.at(:EventTester, address)
 
-  # Test Indexing Indexed Events with Map params
+    # Test Indexing Indexed Events with Map params
 
-    ExW3.EventListener.start_link()    
+    ExW3.EventListener.start_link()
 
     {:ok, agent} = Agent.start_link(fn -> [] end)
 
-    indexed_filter_id = ExW3.Contract.filter(
-      :EventTester,
-      "SimpleIndex",
-      self(),
-      %{
-    	topics: %{num: 46, data: "Hello, World!"},
-      }
-    )
+    indexed_filter_id =
+      ExW3.Contract.filter(
+        :EventTester,
+        "SimpleIndex",
+        self(),
+        %{
+          topics: %{num: 46, data: "Hello, World!"}
+        }
+      )
 
     {:ok, _tx_hash} =
       ExW3.Contract.send(
-    	:EventTester,
-    	:simpleIndex,
-    	["Hello, World!"],
-    	%{from: Enum.at(context[:accounts], 0), gas: 30_000}
+        :EventTester,
+        :simpleIndex,
+        ["Hello, World!"],
+        %{from: Enum.at(context[:accounts], 0), gas: 30_000}
       )
 
     receive do
       {:event, {_filter_id, data}} ->
-    	Agent.update(agent, fn list -> [data | list] end)
-    after 3_000 ->
-    	raise "Never received event"
+        Agent.update(agent, fn list -> [data | list] end)
+    after
+      3_000 ->
+        raise "Never received event"
     end
 
     state = Agent.get(agent, fn list -> list end)
@@ -359,7 +366,6 @@ defmodule EXW3Test do
     assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
     ExW3.uninstall_filter(indexed_filter_id)
-    
   end
 
   test "starts a Contract GenServer for Complex contract", context do
@@ -405,8 +411,8 @@ defmodule EXW3Test do
     assert address == ExW3.Contract.address(:AddressTester)
 
     formatted_address =
-			Enum.at(context[:accounts], 0)
-			|> ExW3.format_address
+      Enum.at(context[:accounts], 0)
+      |> ExW3.format_address()
 
     {:ok, same_address} = ExW3.Contract.call(:AddressTester, :get, [formatted_address])
 
@@ -414,21 +420,33 @@ defmodule EXW3Test do
   end
 
   test "returns checksum for all caps address" do
-    assert ExW3.to_checksum_address(String.downcase("0x52908400098527886E0F7030069857D2E4169EE7")) == "0x52908400098527886E0F7030069857D2E4169EE7"
-    assert ExW3.to_checksum_address(String.downcase("0x8617E340B3D01FA5F11F306F4090FD50E238070D")) == "0x8617E340B3D01FA5F11F306F4090FD50E238070D"
+    assert ExW3.to_checksum_address(String.downcase("0x52908400098527886E0F7030069857D2E4169EE7")) ==
+             "0x52908400098527886E0F7030069857D2E4169EE7"
+
+    assert ExW3.to_checksum_address(String.downcase("0x8617E340B3D01FA5F11F306F4090FD50E238070D")) ==
+             "0x8617E340B3D01FA5F11F306F4090FD50E238070D"
   end
 
-
   test "returns checksumfor all lowercase address" do
-    assert ExW3.to_checksum_address(String.downcase("0xde709f2102306220921060314715629080e2fb77")) == "0xde709f2102306220921060314715629080e2fb77"
-    assert ExW3.to_checksum_address(String.downcase("0x27b1fdb04752bbc536007a920d24acb045561c26")) == "0x27b1fdb04752bbc536007a920d24acb045561c26"
+    assert ExW3.to_checksum_address(String.downcase("0xde709f2102306220921060314715629080e2fb77")) ==
+             "0xde709f2102306220921060314715629080e2fb77"
+
+    assert ExW3.to_checksum_address(String.downcase("0x27b1fdb04752bbc536007a920d24acb045561c26")) ==
+             "0x27b1fdb04752bbc536007a920d24acb045561c26"
   end
 
   test "returns checksum for normal addresses" do
-    assert ExW3.to_checksum_address(String.downcase("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")) == "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed"
-    assert ExW3.to_checksum_address(String.downcase("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359")) == "0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359"
-    assert ExW3.to_checksum_address(String.downcase("0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB")) == "0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB"
-    assert ExW3.to_checksum_address(String.downcase("0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb")) == "0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb"
+    assert ExW3.to_checksum_address(String.downcase("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")) ==
+             "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed"
+
+    assert ExW3.to_checksum_address(String.downcase("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359")) ==
+             "0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359"
+
+    assert ExW3.to_checksum_address(String.downcase("0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB")) ==
+             "0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB"
+
+    assert ExW3.to_checksum_address(String.downcase("0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb")) ==
+             "0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb"
   end
 
   test "returns valid check for is_valid_checksum_address()" do
@@ -447,18 +465,17 @@ defmodule EXW3Test do
   end
 
   test "returns proper error messages at contract deployment", context do
-
     ExW3.Contract.register(:SimpleStorage, abi: context[:simple_storage_abi])
 
     assert {:error, :missing_gas} ==
-      ExW3.Contract.deploy(
-        :SimpleStorage,
-        bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
-        args: [],
-        options: %{
-          from: Enum.at(context[:accounts], 0)
-        }
-      )
+             ExW3.Contract.deploy(
+               :SimpleStorage,
+               bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+               args: [],
+               options: %{
+                 from: Enum.at(context[:accounts], 0)
+               }
+             )
 
     assert {:error, :missing_sender} ==
              ExW3.Contract.deploy(
@@ -466,7 +483,7 @@ defmodule EXW3Test do
                bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
                args: [],
                options: %{
-                 gas: 300_000,
+                 gas: 300_000
                }
              )
 
@@ -479,7 +496,6 @@ defmodule EXW3Test do
                  from: Enum.at(context[:accounts], 0)
                }
              )
-
   end
 
   test "return proper error messages at send and call", context do
@@ -497,17 +513,23 @@ defmodule EXW3Test do
       )
 
     assert {:error, :missing_address} == ExW3.Contract.call(:SimpleStorage, :get)
-    assert {:error, :missing_address} == ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0), gas: 50_000})
+
+    assert {:error, :missing_address} ==
+             ExW3.Contract.send(:SimpleStorage, :set, [1], %{
+               from: Enum.at(context[:accounts], 0),
+               gas: 50_000
+             })
 
     ExW3.Contract.at(:SimpleStorage, address)
 
-    assert {:error, :missing_sender} == ExW3.Contract.send(:SimpleStorage, :set, [1], %{gas: 50_000})
-    assert {:error, :missing_gas} == ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
+    assert {:error, :missing_sender} ==
+             ExW3.Contract.send(:SimpleStorage, :set, [1], %{gas: 50_000})
 
+    assert {:error, :missing_gas} ==
+             ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
   end
 
   test "unit conversion to_wei" do
-    
     assert ExW3.to_wei(1, :wei) == 1
     assert ExW3.to_wei(1, :kwei) == 1_000
     assert ExW3.to_wei(1, :Kwei) == 1_000
@@ -538,7 +560,7 @@ defmodule EXW3Test do
     try do
       ExW3.to_wei(1, :wei1)
     catch
-      _ -> Agent.update(agent, fn _ -> true  end)
+      _ -> Agent.update(agent, fn _ -> true end)
     end
 
     assert Agent.get(agent, fn state -> state end)
@@ -560,13 +582,11 @@ defmodule EXW3Test do
   end
 
   test "send and call sync with SimpleStorage", context do
-    
-    
     ExW3.Contract.register(:SimpleStorage, abi: context[:simple_storage_abi])
 
     {:ok, address, _} =
       ExW3.Contract.deploy(
-	:SimpleStorage,
+        :SimpleStorage,
         bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
@@ -585,7 +605,11 @@ defmodule EXW3Test do
 
     assert data == 0
 
-    t = ExW3.Contract.send_async(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0), gas: 50_000})
+    t =
+      ExW3.Contract.send_async(:SimpleStorage, :set, [1], %{
+        from: Enum.at(context[:accounts], 0),
+        gas: 50_000
+      })
 
     Task.await(t)
 
@@ -595,6 +619,4 @@ defmodule EXW3Test do
 
     assert data == 1
   end
-  
-
 end
