@@ -559,4 +559,42 @@ defmodule EXW3Test do
     assert ExW3.from_wei(1_000_000_000_000_000_000, :tether) == 0.000000000001
   end
 
+  test "send and call sync with SimpleStorage", context do
+    
+    
+    ExW3.Contract.register(:SimpleStorage, abi: context[:simple_storage_abi])
+
+    {:ok, address, _} =
+      ExW3.Contract.deploy(
+	:SimpleStorage,
+        bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+        args: [],
+        options: %{
+          gas: 300_000,
+          from: Enum.at(context[:accounts], 0)
+        }
+      )
+
+    ExW3.Contract.at(:SimpleStorage, address)
+
+    assert address == ExW3.Contract.address(:SimpleStorage)
+
+    t = ExW3.Contract.call_async(:SimpleStorage, :get)
+
+    {:ok, data} = Task.await(t)
+
+    assert data == 0
+
+    t = ExW3.Contract.send_async(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0), gas: 50_000})
+
+    Task.await(t)
+
+    t = ExW3.Contract.call_async(:SimpleStorage, :get)
+
+    {:ok, data} = Task.await(t)
+
+    assert data == 1
+  end
+  
+
 end

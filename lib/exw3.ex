@@ -545,6 +545,22 @@ defmodule ExW3 do
       GenServer.call(ContractManager, {:send, {contract_name, method_name, args, options}})
     end
 
+    @spec call_async(keyword(), keyword(), []) :: {:ok, any()}
+    @doc "Use a Contract's method with an eth_call. Returns a Task to be awaited."
+    def call_async(contract_name, method_name, args \\ []) do
+      Task.async(fn ->
+	GenServer.call(ContractManager, {:call, {contract_name, method_name, args}})
+      end)
+    end
+
+    @spec send_async(keyword(), keyword(), [], %{}) :: {:ok, binary()}
+    @doc "Use a Contract's method with an eth_sendTransaction. Returns a Task to be awaited."
+    def send_async(contract_name, method_name, args, options) do
+      Task.async(fn ->
+	GenServer.call(ContractManager, {:send, {contract_name, method_name, args, options}})
+      end)
+    end    
+    
     @spec tx_receipt(keyword(), binary()) :: %{}
     @doc "Returns a formatted transaction receipt for the given transaction hash(id)"
     def tx_receipt(contract_name, tx_hash) do
