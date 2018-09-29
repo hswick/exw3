@@ -192,7 +192,7 @@ defmodule ExW3 do
   end
 
   @spec new_filter(%{}) :: binary()
-  @doc "Creates a new filter, returns filter id"
+  @doc "Creates a new filter, returns filter id. For more sophisticated use, prefer ExW3.Contract.filter."
   def new_filter(map) do
     case Ethereumex.HttpClient.eth_new_filter(map) do
       {:ok, filter_id} -> filter_id
@@ -200,6 +200,8 @@ defmodule ExW3 do
     end
   end
 
+  @spec get_filter_changes(binary()) :: any()
+  @doc "Gets event changes (logs) by filter. Unlike ExW3.Contract.get_filter_changes it does not return the data in a formatted way"
   def get_filter_changes(filter_id) do
     case Ethereumex.HttpClient.eth_get_filter_changes(filter_id) do
       {:ok, changes} -> changes
@@ -208,6 +210,7 @@ defmodule ExW3 do
   end
 
   @spec uninstall_filter(binary()) :: boolean()
+  @doc "Uninstalls filter from the ethereum node"
   def uninstall_filter(filter_id) do
     case Ethereumex.HttpClient.eth_uninstall_filter(filter_id) do
       {:ok, result} -> result
@@ -407,6 +410,12 @@ defmodule ExW3 do
       GenServer.cast(ContractManager, {:register, {name, contract_info}})
     end
 
+    @spec uninstall_filter(binary()) :: :ok
+    @doc "Uninstalls the filter, and deletes the data associated with the filter id"
+    def uninstall_filter(filter_id) do
+      GenServer.cast(ContractManager, {:uninstall_filter, filter_id})
+    end    
+
     @spec at(keyword(), binary()) :: :ok
     @doc "Sets the address for the contract specified by the name argument"
     def at(name, address) do
@@ -454,6 +463,7 @@ defmodule ExW3 do
     end
 
     @spec filter(keyword(), binary(), %{}) :: {:ok, binary()}
+    @doc "Installs a filter on the Ethereum node. This also formats the parameters, and saves relevant information to format event logs."
     def filter(contract_name, event_name, event_data \\ %{}) do
       GenServer.call(
         ContractManager,
@@ -462,13 +472,14 @@ defmodule ExW3 do
     end
 
     @spec get_filter_changes(binary(), integer()) :: {:ok, []}
+    @doc "Using saved information related to the filter id, event logs are formatted properly"
     def get_filter_changes(filter_id, seconds \\ 0) do
       GenServer.call(
 	ContractManager,
 	{:get_filter_changes, {filter_id, seconds}}
       )
     end
-
+ 
     # Server
 
     def init(state) do
@@ -651,6 +662,11 @@ defmodule ExW3 do
 
     def handle_cast({:register, {name, contract_info}}, state) do
       {:noreply, Map.put(state, name, register_helper(contract_info))}
+    end
+
+    def handle_cast({:uninstall_filter, filter_id}, state) do
+      ExW3.uninstall_filter(filter_id)
+      {:noreply, Map.put(state, :filters, Map.delete(state[:filters], filter_id))}
     end
 
     # Calls

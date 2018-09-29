@@ -223,7 +223,7 @@ defmodule EXW3Test do
     assert Map.get(log_data, "num") == 42
     assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
 
-    ExW3.uninstall_filter(filter_id)
+    ExW3.Contract.uninstall_filter(filter_id)
 
     # Test indexed events
 
@@ -247,7 +247,7 @@ defmodule EXW3Test do
     assert Map.get(log_data, "num") == 46
     assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
-    ExW3.uninstall_filter(indexed_filter_id)
+    ExW3.Contract.uninstall_filter(indexed_filter_id)
 
     # Test Indexing Indexed Events
 
@@ -280,7 +280,7 @@ defmodule EXW3Test do
     assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
     
-    ExW3.uninstall_filter(indexed_filter_id)
+    ExW3.Contract.uninstall_filter(indexed_filter_id)
 
     # Tests filter with map params
 
@@ -312,7 +312,7 @@ defmodule EXW3Test do
     assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
     
-    ExW3.uninstall_filter(indexed_filter_id)
+    ExW3.Contract.uninstall_filter(indexed_filter_id)
     
   end
 
