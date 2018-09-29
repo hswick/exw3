@@ -6,7 +6,7 @@
 
 ```elixir
 def deps do
-  [{:exw3, "~> 0.2.0"}]
+  [{:exw3, "~> 0.3.0"}]
 end
 ```
 ## Overview
@@ -161,7 +161,7 @@ def listen_for_event do
   {:ok, changes} = ExW3.Contract.get_filter_changes(filter_id) # Get our changes from the blockchain
   handle_changes(changes) # Some function to deal with the data. Good place to use pattern matching.
   :timer.sleep(1000) # Some delay in milliseconds. Recommended to save bandwidth, and not spam.
-  listen_for_event # Recurse
+  listen_for_event() # Recurse
 end
 ```
 
