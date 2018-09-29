@@ -302,7 +302,7 @@ defmodule EXW3Test do
       )
 
     # Demonstrating the delay capability
-    {:ok, change_logs} = ExW3.Contract.get_filter_changes(indexed_filter_id, 1)
+    {:ok, change_logs} = ExW3.Contract.get_filter_changes(indexed_filter_id)
 
     event_log = Enum.at(change_logs, 0)
     assert event_log |> is_map

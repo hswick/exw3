@@ -471,12 +471,12 @@ defmodule ExW3 do
       )
     end
 
-    @spec get_filter_changes(binary(), integer()) :: {:ok, []}
+    @spec get_filter_changes(binary()) :: {:ok, []}
     @doc "Using saved information related to the filter id, event logs are formatted properly"
-    def get_filter_changes(filter_id, seconds \\ 0) do
+    def get_filter_changes(filter_id) do
       GenServer.call(
 	ContractManager,
-	{:get_filter_changes, {filter_id, seconds}}
+	{:get_filter_changes, filter_id}
       )
     end
  
@@ -807,9 +807,7 @@ defmodule ExW3 do
       {:reply, {:ok, filter_id}, Map.put(state, :filters, Map.put(state[:filters], filter_id, %{contract_name: contract_name, event_name: event_name}))}
     end
 
-    def handle_call({:get_filter_changes, {filter_id, seconds}}, _from, state) do
-
-      :timer.sleep(1000 * seconds)   
+    def handle_call({:get_filter_changes, filter_id}, _from, state) do
       
       filter_info = Map.get(state[:filters], filter_id)
       event_attributes = get_event_attributes(state, filter_info[:contract_name], filter_info[:event_name]) 
