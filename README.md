@@ -11,7 +11,7 @@ end
 ```
 ## Overview
 
-ExW3 is a wrapper around ethereumex to provide a high level, user friendly json rpc api. It currently only supports Http. The primary feature it provides is a handy abstraction for working with smart contracts.
+ExW3 is a wrapper around ethereumex to provide a high level, user friendly json rpc api. It currently ONLY supports http. The primary feature of this library is a handy abstraction for working with smart contracts.
 
 ## Usage
 
@@ -91,16 +91,16 @@ iex(11)> ExW3.Contract.call(:SimpleStorage, :get)
 
 ## Asynchronous
 
-ExW3 now provides async versions of `call` and `send`. They both return a `Task` that can be awaited on.
+ExW3 provides async versions of `call` and `send`. They both return a `Task` that can be awaited on.
 
 ```elixir
-  t = ExW3.Contract.call_async(:SimpleStorage, :get)
-  {:ok, data} = Task.await(t)
+t = ExW3.Contract.call_async(:SimpleStorage, :get)
+{:ok, data} = Task.await(t)
 ```
 
 ## Events
 
-ExW3 allows the retrieval of event logs using filters. In this example, assume we have already deployed and registered a contract called :EventTester.
+ExW3 allows the retrieval of event logs using filters or transaction receipts. In this example we will demonstrate a filter. Assume we have already deployed and registered a contract called EventTester.
 
 ```elixir
 # We can optionally specify extra parameters like `:fromBlock`, and `:toBlock`
@@ -119,37 +119,51 @@ Ethereum allows a user to add topics to filters. This means the filter will only
 
 If you have written your event in Solidity like this:
 ```
-    event SimpleIndex(uint256 indexed num, bytes32 indexed data, uint256 otherNum);
+event SimpleIndex(uint256 indexed num, bytes32 indexed data, uint256 otherNum);
 ```
 
-You can add filter on which logs will be returned back to the RPC client, based on the indexed fields.
+You can add a filter on which logs will be returned back to the RPC client based on the indexed fields.
 
-ExW3 allows for 2 ways of specifying these parameters or `topics` in two ways. The first, and probably more preferred way, is with a map:
+ExW3 allows for 2 ways of specifying these parameters (`:topics`) in two ways. The first, and probably more preferred way, is with a map:
 
 ```elixir
-  indexed_filter_id = ExW3.Contract.filter(
-    :EventTester,
-    "SimpleIndex",
-    %{
-      topics: %{num: 46, data: "Hello, World!"},
-    }
-  )
+indexed_filter_id = ExW3.Contract.filter(
+  :EventTester,
+  "SimpleIndex",
+  %{
+    topics: %{num: 46, data: "Hello, World!"},
+  }
+)
 ```
 
-The other option is with a list, but this is order dependent, and any values you don't want to specify must be represented with a `nil`.
+The other option is a list (mapped version is an abstraction over this). The downside here is this is order dependent. Any values you don't want to specify must be represented with a `nil`. This approach has been included because it is the implementation of the JSON RPC spec.
 
 ```elixir
-  indexed_filter_id = ExW3.Contract.filter(
-    :EventTester,
-    self(),
-    %{
-      topics: [nil, "Hello, World!"]
-    }
-  )
+indexed_filter_id = ExW3.Contract.filter(
+  :EventTester,
+  "SimpleIndex",
+  %{
+    topics: [nil, "Hello, World!"]
+  }
+)
 ```
 
-In this case we are skipping the `num` topic, and only filtering on the `data` parameter.
+Here we are skipping the `num` topic, and only filtering on the `data` parameter.
 
+NOTE!!! These two approaches are mutually exclusive, and for almost all cases you should prefer the map.
+
+## Continuous Event Handling
+
+In many cases, you will want some process to continuously listen for events. We can implement this functionality using a recursive function. Since Elixir uses tail call optimization, we won't have to worry about blowing up the stack.
+
+```elixir
+def listen_for_event do
+  {:ok, changes} = ExW3.Contract.get_filter_changes(filter_id) # Get our changes from the blockchain
+  handle_changes(changes) # Some function to deal with the data. Good place to use pattern matching.
+  :timer.sleep(1000) # Some delay in milliseconds. Recommended to save bandwidth, and not spam.
+  listen_for_event # Recurse
+end
+```
 
 # Compiling Solidity
 

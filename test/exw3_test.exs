@@ -186,8 +186,9 @@ defmodule EXW3Test do
   end
 
   test "Testing formatted get filter changes", context do
+    
     ExW3.Contract.register(:EventTester, abi: context[:event_tester_abi])
-
+    
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :EventTester,
@@ -213,7 +214,6 @@ defmodule EXW3Test do
       )
 
     {:ok, change_logs} = ExW3.Contract.get_filter_changes(filter_id)
-
 
     event_log = Enum.at(change_logs, 0)
 
