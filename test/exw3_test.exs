@@ -202,7 +202,7 @@ defmodule EXW3Test do
 
     # Test non indexed events
 
-    filter_id = ExW3.Contract.filter(:EventTester, "Simple")
+    {:ok, filter_id} = ExW3.Contract.filter(:EventTester, "Simple")
 
     {:ok, _tx_hash} =
       ExW3.Contract.send(
@@ -212,7 +212,7 @@ defmodule EXW3Test do
         %{from: Enum.at(context[:accounts], 0), gas: 30_000}
       )
 
-    {:ok, change_logs} = ExW3.Contract.get_changes(filter_id)
+    {:ok, change_logs} = ExW3.Contract.get_filter_changes(filter_id)
 
 
     event_log = Enum.at(change_logs, 0)
@@ -227,7 +227,7 @@ defmodule EXW3Test do
 
     # Test indexed events
 
-    indexed_filter_id = ExW3.Contract.filter(:EventTester, "SimpleIndex")
+    {:ok, indexed_filter_id} = ExW3.Contract.filter(:EventTester, "SimpleIndex")
 
     {:ok, _tx_hash} =
       ExW3.Contract.send(
@@ -237,7 +237,7 @@ defmodule EXW3Test do
         %{from: Enum.at(context[:accounts], 0), gas: 30_000}
       )
 
-    {:ok, change_logs} = ExW3.Contract.get_changes(indexed_filter_id)
+    {:ok, change_logs} = ExW3.Contract.get_filter_changes(indexed_filter_id)
 
     event_log = Enum.at(change_logs, 0)
     
@@ -251,7 +251,7 @@ defmodule EXW3Test do
 
     # Test Indexing Indexed Events
 
-    indexed_filter_id =
+    {:ok, indexed_filter_id} =
       ExW3.Contract.filter(
         :EventTester,
         "SimpleIndex",
@@ -270,7 +270,7 @@ defmodule EXW3Test do
         %{from: Enum.at(context[:accounts], 0), gas: 30_000}
       )
 
-    {:ok, change_logs} = ExW3.Contract.get_changes(indexed_filter_id)
+    {:ok, change_logs} = ExW3.Contract.get_filter_changes(indexed_filter_id)
 
     event_log = Enum.at(change_logs, 0)
     assert event_log |> is_map
@@ -284,7 +284,7 @@ defmodule EXW3Test do
 
     # Tests filter with map params
 
-    indexed_filter_id =
+    {:ok, indexed_filter_id} =
       ExW3.Contract.filter(
         :EventTester,
         "SimpleIndex",
@@ -302,7 +302,7 @@ defmodule EXW3Test do
       )
 
     # Demonstrating the delay capability
-    {:ok, change_logs} = ExW3.Contract.get_changes(indexed_filter_id, 1)
+    {:ok, change_logs} = ExW3.Contract.get_filter_changes(indexed_filter_id, 1)
 
     event_log = Enum.at(change_logs, 0)
     assert event_log |> is_map

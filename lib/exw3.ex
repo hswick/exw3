@@ -461,11 +461,11 @@ defmodule ExW3 do
       )
     end
 
-    @spec get_changes(binary(), integer()) :: {:ok, []}
-    def get_changes(filter_id, seconds \\ 0) do
+    @spec get_filter_changes(binary(), integer()) :: {:ok, []}
+    def get_filter_changes(filter_id, seconds \\ 0) do
       GenServer.call(
 	ContractManager,
-	{:get_changes, {filter_id, seconds}}
+	{:get_filter_changes, {filter_id, seconds}}
       )
     end
 
@@ -788,10 +788,10 @@ defmodule ExW3 do
 
       filter_id = ExW3.new_filter(payload)
 
-      {:reply, filter_id, Map.put(state, :filters, Map.put(state[:filters], filter_id, %{contract_name: contract_name, event_name: event_name}))}
+      {:reply, {:ok, filter_id}, Map.put(state, :filters, Map.put(state[:filters], filter_id, %{contract_name: contract_name, event_name: event_name}))}
     end
 
-    def handle_call({:get_changes, {filter_id, seconds}}, _from, state) do
+    def handle_call({:get_filter_changes, {filter_id, seconds}}, _from, state) do
 
       :timer.sleep(1000 * seconds)   
       
