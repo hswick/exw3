@@ -35,9 +35,9 @@ defmodule ExW3.MixProject do
   defp deps do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
-      {:ethereumex, "~> 0.3.4"},
+      {:ethereumex, "~> 0.4.0"},
       {:abi, "~> 0.1.8"},
-      {:poison, "~> 3.1"}
+      {:poison, "~> 4.0.1"}
     ]
   end
 

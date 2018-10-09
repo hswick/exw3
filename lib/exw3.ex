@@ -259,7 +259,7 @@ defmodule ExW3 do
     file = File.read(Path.join(System.cwd(), file_path))
 
     case file do
-      {:ok, abi} -> reformat_abi(Poison.Parser.parse!(abi))
+      {:ok, abi} -> reformat_abi(Poison.Parser.parse!(abi, %{}))
       err -> err
     end
   end
