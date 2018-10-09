@@ -242,10 +242,14 @@ defmodule ExW3 do
     ExthCrypto.Hash.Keccak.kec(signature) |> Base.encode16(case: :lower)
   end
 
+  @spec eth_call([]) :: any()
+  @doc "Simple eth_call to client. Recommended to use ExW3.Contract.call instead."
   def eth_call(arguments) do
     call_client(:eth_call, arguments)
   end
 
+  @spec eth_send([]) :: any()
+  @doc "Simple eth_send_transaction. Recommended to use ExW3.Contract.send instead."
   def eth_send(arguments) do
     call_client(:eth_send_transaction, arguments)
   end
