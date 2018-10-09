@@ -124,8 +124,8 @@ defmodule ExW3 do
       :http -> apply(Ethereumex.HttpClient, method_name, arguments)
       :ipc -> apply(Ethereumex.IpcClient, method_name, arguments)
       _ -> {:error, :invalid_client_type}
-    end    
-  end  
+    end
+  end
 
   @spec accounts() :: list()
   @doc "returns all available accounts"
@@ -182,10 +182,11 @@ defmodule ExW3 do
   def tx_receipt(tx_hash) do
     case call_client(:eth_get_transaction_receipt, [tx_hash]) do
       {:ok, receipt} ->
-        {:ok, Map.merge(
-          receipt,
-          keys_to_decimal(receipt, ["blockNumber", "cumulativeGasUsed", "gasUsed"])
-        )}
+        {:ok,
+         Map.merge(
+           receipt,
+           keys_to_decimal(receipt, ["blockNumber", "cumulativeGasUsed", "gasUsed"])
+         )}
 
       err ->
         {:error, err}
@@ -436,7 +437,7 @@ defmodule ExW3 do
     @doc "Uninstalls the filter, and deletes the data associated with the filter id"
     def uninstall_filter(filter_id) do
       GenServer.cast(ContractManager, {:uninstall_filter, filter_id})
-    end    
+    end
 
     @spec at(keyword(), binary()) :: :ok
     @doc "Sets the address for the contract specified by the name argument"
@@ -462,22 +463,6 @@ defmodule ExW3 do
       GenServer.call(ContractManager, {:send, {contract_name, method_name, args, options}})
     end
 
-    @spec call_async(keyword(), keyword(), []) :: {:ok, any()}
-    @doc "Use a Contract's method with an eth_call. Returns a Task to be awaited."
-    def call_async(contract_name, method_name, args \\ []) do
-      Task.async(fn ->
-        GenServer.call(ContractManager, {:call, {contract_name, method_name, args}})
-      end)
-    end
-
-    @spec send_async(keyword(), keyword(), [], %{}) :: {:ok, binary()}
-    @doc "Use a Contract's method with an eth_sendTransaction. Returns a Task to be awaited."
-    def send_async(contract_name, method_name, args, options) do
-      Task.async(fn ->
-        GenServer.call(ContractManager, {:send, {contract_name, method_name, args, options}})
-      end)
-    end
-
     @spec tx_receipt(keyword(), binary()) :: %{}
     @doc "Returns a formatted transaction receipt for the given transaction hash(id)"
     def tx_receipt(contract_name, tx_hash) do
@@ -497,11 +482,11 @@ defmodule ExW3 do
     @doc "Using saved information related to the filter id, event logs are formatted properly"
     def get_filter_changes(filter_id) do
       GenServer.call(
-	ContractManager,
-	{:get_filter_changes, filter_id}
+        ContractManager,
+        {:get_filter_changes, filter_id}
       )
     end
- 
+
     # Server
 
     def init(state) do
@@ -579,8 +564,8 @@ defmodule ExW3 do
         end)
 
       [
-	events: Enum.into(signature_types_map, %{}),
-	event_names: Enum.into(names_map, %{})
+        events: Enum.into(signature_types_map, %{}),
+        event_names: Enum.into(names_map, %{})
       ]
     end
 
@@ -634,10 +619,12 @@ defmodule ExW3 do
 
     def eth_call_helper(address, abi, method_name, args) do
       result =
-        ExW3.eth_call([%{
-          to: address,
-          data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
-        }])
+        ExW3.eth_call([
+          %{
+            to: address,
+            data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
+          }
+        ])
 
       case result do
         {:ok, data} -> ([:ok] ++ ExW3.decode_output(abi, method_name, data)) |> List.to_tuple()
@@ -655,13 +642,13 @@ defmodule ExW3 do
             data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
           },
           Map.put(options, :gas, gas)
-        )]
-      )
+        )
+      ])
     end
 
     defp register_helper(contract_info) do
       if contract_info[:abi] do
-	contract_info ++ init_events(contract_info[:abi])
+        contract_info ++ init_events(contract_info[:abi])
       else
         raise "ABI not provided upon initialization"
       end
@@ -807,7 +794,7 @@ defmodule ExW3 do
       new_data = Map.merge(indexed_fields, non_indexed_fields)
 
       Map.put(log, "data", new_data)
-    end    
+    end
 
     def handle_call({:filter, {contract_name, event_name, event_data}}, _from, state) do
       contract_info = state[contract_name]
@@ -826,38 +813,47 @@ defmodule ExW3 do
 
       filter_id = ExW3.new_filter(payload)
 
-      {:reply, {:ok, filter_id}, Map.put(state, :filters, Map.put(state[:filters], filter_id, %{contract_name: contract_name, event_name: event_name}))}
+      {:reply, {:ok, filter_id},
+       Map.put(
+         state,
+         :filters,
+         Map.put(state[:filters], filter_id, %{
+           contract_name: contract_name,
+           event_name: event_name
+         })
+       )}
     end
 
     def handle_call({:get_filter_changes, filter_id}, _from, state) do
-      
       filter_info = Map.get(state[:filters], filter_id)
-      event_attributes = get_event_attributes(state, filter_info[:contract_name], filter_info[:event_name]) 
+
+      event_attributes =
+        get_event_attributes(state, filter_info[:contract_name], filter_info[:event_name])
 
       logs = ExW3.get_filter_changes(filter_id)
 
       formatted_logs =
-      if logs != [] do
-        Enum.map(logs, fn log ->
-	  formatted_log =
-            Enum.reduce(
-	      [
-                ExW3.keys_to_decimal(log, [
-		      "blockNumber",
-		      "logIndex",
-		      "transactionIndex",
-		      "transactionLogIndex"
-                    ]),
-                format_log_data(log, event_attributes)
-	      ],
-	      &Map.merge/2
-            )
-	  
-	  formatted_log
-        end)
-      else
-	logs
-      end
+        if logs != [] do
+          Enum.map(logs, fn log ->
+            formatted_log =
+              Enum.reduce(
+                [
+                  ExW3.keys_to_decimal(log, [
+                    "blockNumber",
+                    "logIndex",
+                    "transactionIndex",
+                    "transactionLogIndex"
+                  ]),
+                  format_log_data(log, event_attributes)
+                ],
+                &Map.merge/2
+              )
+
+            formatted_log
+          end)
+        else
+          logs
+        end
 
       {:reply, {:ok, formatted_logs}, state}
     end

@@ -186,9 +186,8 @@ defmodule EXW3Test do
   end
 
   test "Testing formatted get filter changes", context do
-    
     ExW3.Contract.register(:EventTester, abi: context[:event_tester_abi])
-    
+
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :EventTester,
@@ -240,7 +239,7 @@ defmodule EXW3Test do
     {:ok, change_logs} = ExW3.Contract.get_filter_changes(indexed_filter_id)
 
     event_log = Enum.at(change_logs, 0)
-    
+
     assert event_log |> is_map
     log_data = Map.get(event_log, "data")
     assert log_data |> is_map
@@ -279,7 +278,7 @@ defmodule EXW3Test do
     assert Map.get(log_data, "num") == 46
     assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
-    
+
     ExW3.Contract.uninstall_filter(indexed_filter_id)
 
     # Tests filter with map params
@@ -311,9 +310,8 @@ defmodule EXW3Test do
     assert Map.get(log_data, "num") == 46
     assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
-    
+
     ExW3.Contract.uninstall_filter(indexed_filter_id)
-    
   end
 
   test "starts a Contract GenServer for Complex contract", context do
@@ -527,44 +525,5 @@ defmodule EXW3Test do
     assert ExW3.from_wei(1_000_000_000_000_000_000, :mether) == 0.000001
     assert ExW3.from_wei(1_000_000_000_000_000_000, :gether) == 0.000000001
     assert ExW3.from_wei(1_000_000_000_000_000_000, :tether) == 0.000000000001
-  end
-
-  test "send and call sync with SimpleStorage", context do
-    ExW3.Contract.register(:SimpleStorage, abi: context[:simple_storage_abi])
-
-    {:ok, address, _} =
-      ExW3.Contract.deploy(
-        :SimpleStorage,
-        bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
-        args: [],
-        options: %{
-          gas: 300_000,
-          from: Enum.at(context[:accounts], 0)
-        }
-      )
-
-    ExW3.Contract.at(:SimpleStorage, address)
-
-    assert address == ExW3.Contract.address(:SimpleStorage)
-
-    t = ExW3.Contract.call_async(:SimpleStorage, :get)
-
-    {:ok, data} = Task.await(t)
-
-    assert data == 0
-
-    t =
-      ExW3.Contract.send_async(:SimpleStorage, :set, [1], %{
-        from: Enum.at(context[:accounts], 0),
-        gas: 50_000
-      })
-
-    Task.await(t)
-
-    t = ExW3.Contract.call_async(:SimpleStorage, :get)
-
-    {:ok, data} = Task.await(t)
-
-    assert data == 1
   end
 end
