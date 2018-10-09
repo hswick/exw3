@@ -31,6 +31,8 @@ defmodule ExW3 do
     :tether => 1_000_000_000_000_000_000_000_000_000_000
   }
 
+  @client_type Application.get_env(:ethereumex, :client_type, :http)
+
   @spec get_unit_map() :: %{}
   @doc "Returns the map used for ether unit conversion"
   def get_unit_map do
@@ -117,10 +119,18 @@ defmodule ExW3 do
     to_checksum_address(address) == address
   end
 
+  defp call_client(method_name, arguments \\ []) do
+    case @client_type do
+      :http -> apply(Ethereumex.HttpClient, method_name, arguments)
+      :ipc -> apply(Ethereumex.IpcClient, method_name, arguments)
+      _ -> {:error, :invalid_client_type}
+    end    
+  end  
+
   @spec accounts() :: list()
   @doc "returns all available accounts"
   def accounts do
-    case Ethereumex.HttpClient.eth_accounts() do
+    case call_client(:eth_accounts) do
       {:ok, accounts} -> accounts
       err -> err
     end
@@ -137,7 +147,7 @@ defmodule ExW3 do
   @spec block_number() :: integer()
   @doc "Returns the current block number"
   def block_number do
-    case Ethereumex.HttpClient.eth_block_number() do
+    case call_client(:eth_block_number) do
       {:ok, block_number} ->
         block_number |> to_decimal
 
@@ -149,7 +159,7 @@ defmodule ExW3 do
   @spec balance(binary()) :: integer()
   @doc "Returns current balance of account"
   def balance(account) do
-    case Ethereumex.HttpClient.eth_get_balance(account) do
+    case call_client(:eth_get_balance, [account]) do
       {:ok, balance} ->
         balance |> to_decimal
 
@@ -170,22 +180,22 @@ defmodule ExW3 do
   @spec tx_receipt(binary()) :: %{}
   @doc "Returns transaction receipt for specified transaction hash(id)"
   def tx_receipt(tx_hash) do
-    case Ethereumex.HttpClient.eth_get_transaction_receipt(tx_hash) do
+    case call_client(:eth_get_transaction_receipt, [tx_hash]) do
       {:ok, receipt} ->
-        Map.merge(
+        {:ok, Map.merge(
           receipt,
           keys_to_decimal(receipt, ["blockNumber", "cumulativeGasUsed", "gasUsed"])
-        )
+        )}
 
       err ->
-        err
+        {:error, err}
     end
   end
 
   @spec block(integer()) :: any()
   @doc "Returns block data for specified block number"
   def block(block_number) do
-    case Ethereumex.HttpClient.eth_get_block_by_number(block_number, true) do
+    case call_client(:eth_get_block_by_number, [block_number, true]) do
       {:ok, block} -> block
       err -> err
     end
@@ -194,7 +204,7 @@ defmodule ExW3 do
   @spec new_filter(%{}) :: binary()
   @doc "Creates a new filter, returns filter id. For more sophisticated use, prefer ExW3.Contract.filter."
   def new_filter(map) do
-    case Ethereumex.HttpClient.eth_new_filter(map) do
+    case call_client(:eth_new_filter, [map]) do
       {:ok, filter_id} -> filter_id
       err -> err
     end
@@ -203,7 +213,7 @@ defmodule ExW3 do
   @spec get_filter_changes(binary()) :: any()
   @doc "Gets event changes (logs) by filter. Unlike ExW3.Contract.get_filter_changes it does not return the data in a formatted way"
   def get_filter_changes(filter_id) do
-    case Ethereumex.HttpClient.eth_get_filter_changes(filter_id) do
+    case call_client(:eth_get_filter_changes, [filter_id]) do
       {:ok, changes} -> changes
       err -> err
     end
@@ -212,7 +222,7 @@ defmodule ExW3 do
   @spec uninstall_filter(binary()) :: boolean()
   @doc "Uninstalls filter from the ethereum node"
   def uninstall_filter(filter_id) do
-    case Ethereumex.HttpClient.eth_uninstall_filter(filter_id) do
+    case call_client(:eth_uninstall_filter, [filter_id]) do
       {:ok, result} -> result
       err -> err
     end
@@ -222,7 +232,7 @@ defmodule ExW3 do
   @doc "Mines number of blocks specified. Default is 1"
   def mine(num_blocks \\ 1) do
     for _ <- 0..(num_blocks - 1) do
-      Ethereumex.HttpClient.request("evm_mine", [], [])
+      call_client(:request, ["evm_mine", [], []])
     end
   end
 
@@ -230,6 +240,14 @@ defmodule ExW3 do
   @doc "Encodes event based on signature"
   def encode_event(signature) do
     ExthCrypto.Hash.Keccak.kec(signature) |> Base.encode16(case: :lower)
+  end
+
+  def eth_call(arguments) do
+    call_client(:eth_call, arguments)
+  end
+
+  def eth_send(arguments) do
+    call_client(:eth_send_transaction, arguments)
   end
 
   @spec decode_event(binary(), binary()) :: any()
@@ -603,19 +621,19 @@ defmodule ExW3 do
         gas: gas
       }
 
-      {:ok, tx_hash} = Ethereumex.HttpClient.eth_send_transaction(tx)
+      {:ok, tx_hash} = ExW3.eth_send([tx])
 
-      {:ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_hash)
+      {:ok, tx_receipt} = ExW3.tx_receipt(tx_hash)
 
       {tx_receipt["contractAddress"], tx_hash}
     end
 
     def eth_call_helper(address, abi, method_name, args) do
       result =
-        Ethereumex.HttpClient.eth_call(%{
+        ExW3.eth_call([%{
           to: address,
           data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
-        })
+        }])
 
       case result do
         {:ok, data} -> ([:ok] ++ ExW3.decode_output(abi, method_name, data)) |> List.to_tuple()
@@ -626,14 +644,14 @@ defmodule ExW3 do
     def eth_send_helper(address, abi, method_name, args, options) do
       gas = ExW3.encode_option(options[:gas])
 
-      Ethereumex.HttpClient.eth_send_transaction(
+      ExW3.eth_send([
         Map.merge(
           %{
             to: address,
             data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
           },
           Map.put(options, :gas, gas)
-        )
+        )]
       )
     end
 
@@ -893,7 +911,7 @@ defmodule ExW3 do
     def handle_call({:tx_receipt, {contract_name, tx_hash}}, _from, state) do
       contract_info = state[contract_name]
 
-      receipt = ExW3.tx_receipt(tx_hash)
+      {:ok, receipt} = ExW3.tx_receipt(tx_hash)
 
       events = contract_info[:events]
       logs = receipt["logs"]
