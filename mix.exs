@@ -4,7 +4,7 @@ defmodule ExW3.MixProject do
   def project do
     [
      app: :exw3,
-     version: "0.3.0",
+     version: "0.4.0",
      elixir: "~> 1.7.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
