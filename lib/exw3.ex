@@ -31,6 +31,8 @@ defmodule ExW3 do
     :tether => 1_000_000_000_000_000_000_000_000_000_000
   }
 
+  @client_type Application.get_env(:ethereumex, :client_type, :http)
+
   @spec get_unit_map() :: %{}
   @doc "Returns the map used for ether unit conversion"
   def get_unit_map do
@@ -117,10 +119,18 @@ defmodule ExW3 do
     to_checksum_address(address) == address
   end
 
+  defp call_client(method_name, arguments \\ []) do
+    case @client_type do
+      :http -> apply(Ethereumex.HttpClient, method_name, arguments)
+      :ipc -> apply(Ethereumex.IpcClient, method_name, arguments)
+      _ -> {:error, :invalid_client_type}
+    end
+  end
+
   @spec accounts() :: list()
   @doc "returns all available accounts"
   def accounts do
-    case Ethereumex.HttpClient.eth_accounts() do
+    case call_client(:eth_accounts) do
       {:ok, accounts} -> accounts
       err -> err
     end
@@ -137,7 +147,7 @@ defmodule ExW3 do
   @spec block_number() :: integer()
   @doc "Returns the current block number"
   def block_number do
-    case Ethereumex.HttpClient.eth_block_number() do
+    case call_client(:eth_block_number) do
       {:ok, block_number} ->
         block_number |> to_decimal
 
@@ -149,7 +159,7 @@ defmodule ExW3 do
   @spec balance(binary()) :: integer()
   @doc "Returns current balance of account"
   def balance(account) do
-    case Ethereumex.HttpClient.eth_get_balance(account) do
+    case call_client(:eth_get_balance, [account]) do
       {:ok, balance} ->
         balance |> to_decimal
 
@@ -170,22 +180,23 @@ defmodule ExW3 do
   @spec tx_receipt(binary()) :: %{}
   @doc "Returns transaction receipt for specified transaction hash(id)"
   def tx_receipt(tx_hash) do
-    case Ethereumex.HttpClient.eth_get_transaction_receipt(tx_hash) do
+    case call_client(:eth_get_transaction_receipt, [tx_hash]) do
       {:ok, receipt} ->
-        Map.merge(
-          receipt,
-          keys_to_decimal(receipt, ["blockNumber", "cumulativeGasUsed", "gasUsed"])
-        )
+        {:ok,
+         Map.merge(
+           receipt,
+           keys_to_decimal(receipt, ["blockNumber", "cumulativeGasUsed", "gasUsed"])
+         )}
 
       err ->
-        err
+        {:error, err}
     end
   end
 
   @spec block(integer()) :: any()
   @doc "Returns block data for specified block number"
   def block(block_number) do
-    case Ethereumex.HttpClient.eth_get_block_by_number(block_number, true) do
+    case call_client(:eth_get_block_by_number, [block_number, true]) do
       {:ok, block} -> block
       err -> err
     end
@@ -194,7 +205,7 @@ defmodule ExW3 do
   @spec new_filter(%{}) :: binary()
   @doc "Creates a new filter, returns filter id. For more sophisticated use, prefer ExW3.Contract.filter."
   def new_filter(map) do
-    case Ethereumex.HttpClient.eth_new_filter(map) do
+    case call_client(:eth_new_filter, [map]) do
       {:ok, filter_id} -> filter_id
       err -> err
     end
@@ -203,7 +214,7 @@ defmodule ExW3 do
   @spec get_filter_changes(binary()) :: any()
   @doc "Gets event changes (logs) by filter. Unlike ExW3.Contract.get_filter_changes it does not return the data in a formatted way"
   def get_filter_changes(filter_id) do
-    case Ethereumex.HttpClient.eth_get_filter_changes(filter_id) do
+    case call_client(:eth_get_filter_changes, [filter_id]) do
       {:ok, changes} -> changes
       err -> err
     end
@@ -212,7 +223,7 @@ defmodule ExW3 do
   @spec uninstall_filter(binary()) :: boolean()
   @doc "Uninstalls filter from the ethereum node"
   def uninstall_filter(filter_id) do
-    case Ethereumex.HttpClient.eth_uninstall_filter(filter_id) do
+    case call_client(:eth_uninstall_filter, [filter_id]) do
       {:ok, result} -> result
       err -> err
     end
@@ -222,7 +233,7 @@ defmodule ExW3 do
   @doc "Mines number of blocks specified. Default is 1"
   def mine(num_blocks \\ 1) do
     for _ <- 0..(num_blocks - 1) do
-      Ethereumex.HttpClient.request("evm_mine", [], [])
+      call_client(:request, ["evm_mine", [], []])
     end
   end
 
@@ -230,6 +241,18 @@ defmodule ExW3 do
   @doc "Encodes event based on signature"
   def encode_event(signature) do
     ExthCrypto.Hash.Keccak.kec(signature) |> Base.encode16(case: :lower)
+  end
+
+  @spec eth_call([]) :: any()
+  @doc "Simple eth_call to client. Recommended to use ExW3.Contract.call instead."
+  def eth_call(arguments) do
+    call_client(:eth_call, arguments)
+  end
+
+  @spec eth_send([]) :: any()
+  @doc "Simple eth_send_transaction. Recommended to use ExW3.Contract.send instead."
+  def eth_send(arguments) do
+    call_client(:eth_send_transaction, arguments)
   end
 
   @spec decode_event(binary(), binary()) :: any()
@@ -259,7 +282,7 @@ defmodule ExW3 do
     file = File.read(Path.join(System.cwd(), file_path))
 
     case file do
-      {:ok, abi} -> reformat_abi(Poison.Parser.parse!(abi))
+      {:ok, abi} -> reformat_abi(Poison.Parser.parse!(abi, %{}))
       err -> err
     end
   end
@@ -414,7 +437,7 @@ defmodule ExW3 do
     @doc "Uninstalls the filter, and deletes the data associated with the filter id"
     def uninstall_filter(filter_id) do
       GenServer.cast(ContractManager, {:uninstall_filter, filter_id})
-    end    
+    end
 
     @spec at(keyword(), binary()) :: :ok
     @doc "Sets the address for the contract specified by the name argument"
@@ -440,22 +463,6 @@ defmodule ExW3 do
       GenServer.call(ContractManager, {:send, {contract_name, method_name, args, options}})
     end
 
-    @spec call_async(keyword(), keyword(), []) :: {:ok, any()}
-    @doc "Use a Contract's method with an eth_call. Returns a Task to be awaited."
-    def call_async(contract_name, method_name, args \\ []) do
-      Task.async(fn ->
-        GenServer.call(ContractManager, {:call, {contract_name, method_name, args}})
-      end)
-    end
-
-    @spec send_async(keyword(), keyword(), [], %{}) :: {:ok, binary()}
-    @doc "Use a Contract's method with an eth_sendTransaction. Returns a Task to be awaited."
-    def send_async(contract_name, method_name, args, options) do
-      Task.async(fn ->
-        GenServer.call(ContractManager, {:send, {contract_name, method_name, args, options}})
-      end)
-    end
-
     @spec tx_receipt(keyword(), binary()) :: %{}
     @doc "Returns a formatted transaction receipt for the given transaction hash(id)"
     def tx_receipt(contract_name, tx_hash) do
@@ -475,11 +482,11 @@ defmodule ExW3 do
     @doc "Using saved information related to the filter id, event logs are formatted properly"
     def get_filter_changes(filter_id) do
       GenServer.call(
-	ContractManager,
-	{:get_filter_changes, filter_id}
+        ContractManager,
+        {:get_filter_changes, filter_id}
       )
     end
- 
+
     # Server
 
     def init(state) do
@@ -557,8 +564,8 @@ defmodule ExW3 do
         end)
 
       [
-	events: Enum.into(signature_types_map, %{}),
-	event_names: Enum.into(names_map, %{})
+        events: Enum.into(signature_types_map, %{}),
+        event_names: Enum.into(names_map, %{})
       ]
     end
 
@@ -603,19 +610,21 @@ defmodule ExW3 do
         gas: gas
       }
 
-      {:ok, tx_hash} = Ethereumex.HttpClient.eth_send_transaction(tx)
+      {:ok, tx_hash} = ExW3.eth_send([tx])
 
-      {:ok, tx_receipt} = Ethereumex.HttpClient.eth_get_transaction_receipt(tx_hash)
+      {:ok, tx_receipt} = ExW3.tx_receipt(tx_hash)
 
       {tx_receipt["contractAddress"], tx_hash}
     end
 
     def eth_call_helper(address, abi, method_name, args) do
       result =
-        Ethereumex.HttpClient.eth_call(%{
-          to: address,
-          data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
-        })
+        ExW3.eth_call([
+          %{
+            to: address,
+            data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
+          }
+        ])
 
       case result do
         {:ok, data} -> ([:ok] ++ ExW3.decode_output(abi, method_name, data)) |> List.to_tuple()
@@ -626,7 +635,7 @@ defmodule ExW3 do
     def eth_send_helper(address, abi, method_name, args, options) do
       gas = ExW3.encode_option(options[:gas])
 
-      Ethereumex.HttpClient.eth_send_transaction(
+      ExW3.eth_send([
         Map.merge(
           %{
             to: address,
@@ -634,12 +643,12 @@ defmodule ExW3 do
           },
           Map.put(options, :gas, gas)
         )
-      )
+      ])
     end
 
     defp register_helper(contract_info) do
       if contract_info[:abi] do
-	contract_info ++ init_events(contract_info[:abi])
+        contract_info ++ init_events(contract_info[:abi])
       else
         raise "ABI not provided upon initialization"
       end
@@ -785,7 +794,7 @@ defmodule ExW3 do
       new_data = Map.merge(indexed_fields, non_indexed_fields)
 
       Map.put(log, "data", new_data)
-    end    
+    end
 
     def handle_call({:filter, {contract_name, event_name, event_data}}, _from, state) do
       contract_info = state[contract_name]
@@ -804,38 +813,47 @@ defmodule ExW3 do
 
       filter_id = ExW3.new_filter(payload)
 
-      {:reply, {:ok, filter_id}, Map.put(state, :filters, Map.put(state[:filters], filter_id, %{contract_name: contract_name, event_name: event_name}))}
+      {:reply, {:ok, filter_id},
+       Map.put(
+         state,
+         :filters,
+         Map.put(state[:filters], filter_id, %{
+           contract_name: contract_name,
+           event_name: event_name
+         })
+       )}
     end
 
     def handle_call({:get_filter_changes, filter_id}, _from, state) do
-      
       filter_info = Map.get(state[:filters], filter_id)
-      event_attributes = get_event_attributes(state, filter_info[:contract_name], filter_info[:event_name]) 
+
+      event_attributes =
+        get_event_attributes(state, filter_info[:contract_name], filter_info[:event_name])
 
       logs = ExW3.get_filter_changes(filter_id)
 
       formatted_logs =
-      if logs != [] do
-        Enum.map(logs, fn log ->
-	  formatted_log =
-            Enum.reduce(
-	      [
-                ExW3.keys_to_decimal(log, [
-		      "blockNumber",
-		      "logIndex",
-		      "transactionIndex",
-		      "transactionLogIndex"
-                    ]),
-                format_log_data(log, event_attributes)
-	      ],
-	      &Map.merge/2
-            )
-	  
-	  formatted_log
-        end)
-      else
-	logs
-      end
+        if logs != [] do
+          Enum.map(logs, fn log ->
+            formatted_log =
+              Enum.reduce(
+                [
+                  ExW3.keys_to_decimal(log, [
+                    "blockNumber",
+                    "logIndex",
+                    "transactionIndex",
+                    "transactionLogIndex"
+                  ]),
+                  format_log_data(log, event_attributes)
+                ],
+                &Map.merge/2
+              )
+
+            formatted_log
+          end)
+        else
+          logs
+        end
 
       {:reply, {:ok, formatted_logs}, state}
     end
@@ -893,7 +911,7 @@ defmodule ExW3 do
     def handle_call({:tx_receipt, {contract_name, tx_hash}}, _from, state) do
       contract_info = state[contract_name]
 
-      receipt = ExW3.tx_receipt(tx_hash)
+      {:ok, receipt} = ExW3.tx_receipt(tx_hash)
 
       events = contract_info[:events]
       logs = receipt["logs"]

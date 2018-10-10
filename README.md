@@ -11,7 +11,7 @@ end
 ```
 ## Overview
 
-ExW3 is a wrapper around ethereumex to provide a high level, user friendly json rpc api. It currently ONLY supports http. The primary feature of this library is a handy abstraction for working with smart contracts.
+ExW3 is a wrapper around ethereumex to provide a high level, user friendly json rpc api. This library is focused on providing a handy abstraction for working with smart contracts, and any other relevant utilities.
 
 ## Usage
 
@@ -34,15 +34,33 @@ If Parity complains about password or missing account, try
 parity --chain dev --unlock=0x00a329c0648769a73afac7f9381e08fb43dbea72
 ```
 
-Make sure your config includes:
+### Http
+
+To use Ethereumex's HttpClient simply set your config like this:
 ```elixir
 config :ethereumex,
+  client_type: :http,
   url: "http://localhost:8545"
 ```
 
-Currently, ExW3 supports a handful of json rpc commands. Mostly just the useful ones. If it doesn't support a specific commands you can always use the [Ethereumex](https://github.com/exthereum/ethereumex) commands.
+### Ipc
 
-Check out the [documentation](https://hexdocs.pm/exw3/ExW3.html)
+If you want to use IpcClient set your config to something like this:
+```elixir
+config :ethereumex,
+  client_type: :ipc,
+  ipc_path: "/.local/share/io.parity.ethereum/jsonrpc.ipc"
+```
+
+Provide an absolute path to the ipc socket provided by whatever Ethereum client you are running. You don't need to include the home directory, as that will be prepended to the path provided.
+
+* NOTE * Use of Ipc is recommended, as it is more secure and significantly faster.
+
+Currently, ExW3 supports a handful of json rpc commands. Primarily the ones that get used the most. If ExW3 doesn't provide a specific command, you can always use the [Ethereumex](https://github.com/exthereum/ethereumex) commands.
+
+Check out the [documentation](https://hexdocs.pm/exw3/ExW3.html) for more details of the API.
+
+### Example
 
 ```elixir
 iex(1)> accounts = ExW3.accounts()
@@ -89,13 +107,11 @@ iex(11)> ExW3.Contract.call(:SimpleStorage, :get)
 {:ok, 1}
 ```
 
-## Asynchronous
+## Address Type
 
-ExW3 provides async versions of `call` and `send`. They both return a `Task` that can be awaited on.
-
-```elixir
-t = ExW3.Contract.call_async(:SimpleStorage, :get)
-{:ok, data} = Task.await(t)
+If you are familiar with web3.js you may find the way ExW3 handles addresses unintuitive. ExW3's abi encoder interprets the address type as an uint160. If you are using an address as an option to a transaction like `:from` or `:to` this will work as expected. However, if one of your smart contracts is expecting an address type for an input parameter then you will need to do this:
+```
+a = ExW3.to_decimal("0x88838e84a401a1d6162290a1a765507c4a83f5e050658a83992a912f42149ca5")
 ```
 
 ## Events
