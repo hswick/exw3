@@ -1,5 +1,6 @@
 defmodule ExW3 do
   Module.register_attribute(__MODULE__, :unit_map, persist: true, accumulate: false)
+  Module.register_attribute(__MODULE__, :client_type, persist: true, accumulate: false)
 
   @unit_map %{
     :noether => 0,
@@ -235,6 +236,48 @@ defmodule ExW3 do
     for _ <- 0..(num_blocks - 1) do
       call_client(:request, ["evm_mine", [], []])
     end
+  end
+
+  @spec personal_list_accounts([]) :: {:ok, []}
+  @doc "Using the personal api, returns list of accounts."
+  def personal_list_accounts(opts \\ []) do
+    call_client(:request, ["personal_listAccounts", [], opts])
+  end
+
+  @spec personal_new_account(binary(), []) :: {:ok, binary}
+  @doc "Using the personal api, this method creates a new account with the passphrase, and returns new account address."
+  def personal_new_account(password, opts \\ []) do
+    call_client(:request, ["personal_newAccount", [password], opts])
+  end
+
+  @spec personal_unlock_account(binary(), []) :: {:ok, boolean()}
+  @doc "Using the personal api, this method unlocks account using the passphrase provided, and returns a boolean."
+  def personal_unlock_account(password, opts) do
+    call_client(:request, ["personal_unlockAccount", [password], opts])
+  end
+
+  @spec personal_send_transaction(%{}, binary(), []) :: {:ok, binary()}
+  @doc "Using the personal api, this method sends a transaction and signs it in one call, and returns a transaction id hash."
+  def personal_send_transaction(param_map, passphrase, opts \\ []) do
+    call_client(:request, ["personal_sendTransaction", [param_map, passphrase], opts])
+  end
+
+  @spec personal_sign_transaction(%{}, binary(), []) :: {:ok, %{}}
+  @doc "Using the personal api, this method signs a transaction, and returns the signed transaction."
+  def personal_sign_transaction(param_map, passphrase, opts \\ []) do
+    call_client(:request, ["personal_signTransaction", [param_map, passphrase], opts])
+  end
+
+  @spec personal_sign(binary(), binary(), binary(), []) :: {:ok, binary()}
+  @doc "Using the personal api, this method calculates an Ethereum specific signature, and returns that signature."
+  def personal_sign(data, address, passphrase, opts \\ []) do
+    call_client(:request, ["personal_sign", [data, address, passphrase], opts])
+  end
+
+  @spec personal_ec_recover(binary(), binary(), []) :: {:ok, binary()}
+  @doc "Using the personal api, this method returns the address associated with the private key that was used to calculate the signature with personal_sign."
+  def personal_ec_recover(data0, data1, opts \\ []) do
+    call_client(:request, ["personal_ecRecover", [data0, data1], opts])
   end
 
   @spec encode_event(binary()) :: binary()

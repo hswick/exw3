@@ -54,7 +54,7 @@ config :ethereumex,
 
 Provide an absolute path to the ipc socket provided by whatever Ethereum client you are running. You don't need to include the home directory, as that will be prepended to the path provided.
 
-* NOTE * Use of Ipc is recommended, as it is more secure and significantly faster.
+* NOTE : Use of Ipc is recommended, as it is more secure and significantly faster.
 
 Currently, ExW3 supports a handful of json rpc commands. Primarily the ones that get used the most. If ExW3 doesn't provide a specific command, you can always use the [Ethereumex](https://github.com/exthereum/ethereumex) commands.
 
