@@ -6,7 +6,7 @@
 
 ```elixir
 def deps do
-  [{:exw3, "~> 0.4.0"}]
+  [{:exw3, "~> 0.4.2"}]
 end
 ```
 ## Overview
