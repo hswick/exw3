@@ -404,9 +404,24 @@ defmodule ExW3 do
     )
   end
 
+  @spec encode_options(%{}, []) :: %{}
+  @doc "Encodes list of options and returns them as a map"
+  def encode_options(options, keys) do
+    keys
+    |> Enum.filter(fn option ->
+      Map.has_key?(options, option)
+    end)
+    |> Enum.map(fn option ->
+      {option, encode_option(options[option])}
+    end)
+    |> Enum.into(%{})    
+  end
+
   @spec encode_option(integer()) :: binary()
   @doc "Encodes options into Ethereum JSON RPC hex string"
   def encode_option(0), do: "0x0"
+
+  def encode_option(nil), do: nil
 
   def encode_option(value) do
     "0x" <>
@@ -682,7 +697,10 @@ defmodule ExW3 do
     end
 
     def eth_send_helper(address, abi, method_name, args, options) do
-      gas = ExW3.encode_option(options[:gas])
+      encoded_options = ExW3.encode_options(
+	options,
+	[:gas, :gasPrice, :value, :nonce]
+      )
 
       ExW3.eth_send([
         Map.merge(
@@ -690,7 +708,7 @@ defmodule ExW3 do
             to: address,
             data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
           },
-          Map.put(options, :gas, gas)
+          Map.merge(options, encoded_options)
         )
       ])
     end
