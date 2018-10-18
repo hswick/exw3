@@ -280,6 +280,12 @@ defmodule ExW3 do
     call_client(:request, ["personal_ecRecover", [data0, data1], opts])
   end
 
+  @spec eth_sign(binary(), binary(), []) :: {:ok, binary()}
+  @doc "Calculates an Ethereum specific signature and signs the data provided, using the accounts private key"
+  def eth_sign(data0, data1, opts \\ []) do
+    call_client(:request, ["eth_sign", [data0, data1], opts])
+  end
+
   @spec encode_event(binary()) :: binary()
   @doc "Encodes event based on signature"
   def encode_event(signature) do
