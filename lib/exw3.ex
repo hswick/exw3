@@ -51,7 +51,7 @@ defmodule ExW3 do
   end
 
   @spec from_wei(integer(), keyword()) :: integer()
-  @doc "Converts the value to whatever unit key is provided. See unit map for details."  
+  @doc "Converts the value to whatever unit key is provided. See unit map for details."
   def from_wei(num, key) do
     if @unit_map[key] do
       num / @unit_map[key]
@@ -175,23 +175,20 @@ defmodule ExW3 do
 
   @spec keys_to_decimal(%{}, []) :: %{}
   def keys_to_decimal(map, keys) do
-    Map.new(
-      Enum.map(keys, fn k ->
-        {k, Map.get(map, k) |> to_decimal}
-      end)
-    )
+    for k <- keys, into: %{}, do: {k, map |> Map.get(k) |> to_decimal()}
   end
 
   @spec tx_receipt(binary()) :: %{}
   @doc "Returns transaction receipt for specified transaction hash(id)"
   def tx_receipt(tx_hash) do
     case call_client(:eth_get_transaction_receipt, [tx_hash]) do
+      {:ok, nil} ->
+        {:error, :not_mined}
+
       {:ok, receipt} ->
-        {:ok,
-         Map.merge(
-           receipt,
-           keys_to_decimal(receipt, ["blockNumber", "cumulativeGasUsed", "gasUsed"])
-         )}
+        decimal_res = keys_to_decimal(receipt, ~w(blockNumber cumulativeGasUsed gasUsed))
+
+        {:ok, Map.merge(receipt, decimal_res)}
 
       err ->
         {:error, err}
@@ -418,7 +415,7 @@ defmodule ExW3 do
     |> Enum.map(fn option ->
       {option, encode_option(options[option])}
     end)
-    |> Enum.into(%{})    
+    |> Enum.into(%{})
   end
 
   @spec encode_option(integer()) :: binary()
@@ -701,10 +698,11 @@ defmodule ExW3 do
     end
 
     def eth_send_helper(address, abi, method_name, args, options) do
-      encoded_options = ExW3.encode_options(
-	options,
-	[:gas, :gasPrice, :value, :nonce]
-      )
+      encoded_options =
+        ExW3.encode_options(
+          options,
+          [:gas, :gasPrice, :value, :nonce]
+        )
 
       ExW3.eth_send([
         Map.merge(
