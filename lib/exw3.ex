@@ -32,15 +32,18 @@ defmodule ExW3 do
     :tether => 1_000_000_000_000_000_000_000_000_000_000
   }
 
-  @client_type Application.get_env(:ethereumex, :client_type, :http)
+  @spec get_client_type() :: atom()
+  def get_client_type do
+    Application.get_env(:ethereumex, :client_type, :http)
+  end
 
-  @spec get_unit_map() :: %{}
+  @spec get_unit_map() :: map()
   @doc "Returns the map used for ether unit conversion"
   def get_unit_map do
     @unit_map
   end
 
-  @spec to_wei(integer(), keyword()) :: integer()
+  @spec to_wei(integer(), atom()) :: integer()
   @doc "Converts the value to whatever unit key is provided. See unit map for details."
   def to_wei(num, key) do
     if @unit_map[key] do
@@ -50,7 +53,7 @@ defmodule ExW3 do
     end
   end
 
-  @spec from_wei(integer(), keyword()) :: integer()
+  @spec from_wei(integer(), atom()) :: integer() | float() | no_return
   @doc "Converts the value to whatever unit key is provided. See unit map for details."
   def from_wei(num, key) do
     if @unit_map[key] do
@@ -125,7 +128,7 @@ defmodule ExW3 do
   end
 
   defp call_client(method_name, arguments \\ []) do
-    case @client_type do
+    case get_client_type() do
       :http -> apply(Ethereumex.HttpClient, method_name, arguments)
       :ipc -> apply(Ethereumex.IpcClient, method_name, arguments)
       _ -> {:error, :invalid_client_type}
@@ -161,7 +164,7 @@ defmodule ExW3 do
     end
   end
 
-  @spec balance(binary()) :: integer()
+  @spec balance(binary()) :: integer() | {:error, any()}
   @doc "Returns current balance of account"
   def balance(account) do
     case call_client(:eth_get_balance, [account]) do
@@ -173,12 +176,12 @@ defmodule ExW3 do
     end
   end
 
-  @spec keys_to_decimal(%{}, []) :: %{}
+  @spec keys_to_decimal(map(), list()) :: map()
   def keys_to_decimal(map, keys) do
     for k <- keys, into: %{}, do: {k, map |> Map.get(k) |> to_decimal()}
   end
 
-  @spec tx_receipt(binary()) :: %{}
+  @spec tx_receipt(binary()) :: {:ok, map()} | {:error, any()}
   @doc "Returns transaction receipt for specified transaction hash(id)"
   def tx_receipt(tx_hash) do
     case call_client(:eth_get_transaction_receipt, [tx_hash]) do
@@ -195,7 +198,7 @@ defmodule ExW3 do
     end
   end
 
-  @spec block(integer()) :: any()
+  @spec block(integer()) :: any() | {:error, any()}
   @doc "Returns block data for specified block number"
   def block(block_number) do
     case call_client(:eth_get_block_by_number, [block_number, true]) do
@@ -204,7 +207,7 @@ defmodule ExW3 do
     end
   end
 
-  @spec new_filter(%{}) :: binary()
+  @spec new_filter(map()) :: binary() | {:error, any()}
   @doc "Creates a new filter, returns filter id. For more sophisticated use, prefer ExW3.Contract.filter."
   def new_filter(map) do
     case call_client(:eth_new_filter, [map]) do
@@ -222,7 +225,7 @@ defmodule ExW3 do
     end
   end
 
-  @spec uninstall_filter(binary()) :: boolean()
+  @spec uninstall_filter(binary()) :: boolean() | {:error, any()}
   @doc "Uninstalls filter from the ethereum node"
   def uninstall_filter(filter_id) do
     case call_client(:eth_uninstall_filter, [filter_id]) do
@@ -231,7 +234,7 @@ defmodule ExW3 do
     end
   end
 
-  @spec mine(integer()) :: any()
+  @spec mine(integer()) :: any() | {:error, any()}
   @doc "Mines number of blocks specified. Default is 1"
   def mine(num_blocks \\ 1) do
     for _ <- 0..(num_blocks - 1) do
@@ -239,49 +242,49 @@ defmodule ExW3 do
     end
   end
 
-  @spec personal_list_accounts([]) :: {:ok, []}
+  @spec personal_list_accounts(list()) :: {:ok, list()} | {:error, any()}
   @doc "Using the personal api, returns list of accounts."
   def personal_list_accounts(opts \\ []) do
     call_client(:request, ["personal_listAccounts", [], opts])
   end
 
-  @spec personal_new_account(binary(), []) :: {:ok, binary}
+  @spec personal_new_account(binary(), list()) :: {:ok, binary()} | {:error, any()}
   @doc "Using the personal api, this method creates a new account with the passphrase, and returns new account address."
   def personal_new_account(password, opts \\ []) do
     call_client(:request, ["personal_newAccount", [password], opts])
   end
 
-  @spec personal_unlock_account(binary(), []) :: {:ok, boolean()}
+  @spec personal_unlock_account(binary(), list()) :: {:ok, boolean()} | {:error, any()}
   @doc "Using the personal api, this method unlocks account using the passphrase provided, and returns a boolean."
   def personal_unlock_account(password, opts) do
     call_client(:request, ["personal_unlockAccount", [password], opts])
   end
 
-  @spec personal_send_transaction(%{}, binary(), []) :: {:ok, binary()}
+  @spec personal_send_transaction(map(), binary(), list()) :: {:ok, binary()} | {:error, any()}
   @doc "Using the personal api, this method sends a transaction and signs it in one call, and returns a transaction id hash."
   def personal_send_transaction(param_map, passphrase, opts \\ []) do
     call_client(:request, ["personal_sendTransaction", [param_map, passphrase], opts])
   end
 
-  @spec personal_sign_transaction(%{}, binary(), []) :: {:ok, %{}}
+  @spec personal_sign_transaction(map(), binary(), list()) :: {:ok, map()} | {:error, any()}
   @doc "Using the personal api, this method signs a transaction, and returns the signed transaction."
   def personal_sign_transaction(param_map, passphrase, opts \\ []) do
     call_client(:request, ["personal_signTransaction", [param_map, passphrase], opts])
   end
 
-  @spec personal_sign(binary(), binary(), binary(), []) :: {:ok, binary()}
+  @spec personal_sign(binary(), binary(), binary(), list()) :: {:ok, binary()} | {:error, any()}
   @doc "Using the personal api, this method calculates an Ethereum specific signature, and returns that signature."
   def personal_sign(data, address, passphrase, opts \\ []) do
     call_client(:request, ["personal_sign", [data, address, passphrase], opts])
   end
 
-  @spec personal_ec_recover(binary(), binary(), []) :: {:ok, binary()}
+  @spec personal_ec_recover(binary(), binary(), []) :: {:ok, binary()} | {:error, any()}
   @doc "Using the personal api, this method returns the address associated with the private key that was used to calculate the signature with personal_sign."
   def personal_ec_recover(data0, data1, opts \\ []) do
     call_client(:request, ["personal_ecRecover", [data0, data1], opts])
   end
 
-  @spec eth_sign(binary(), binary(), []) :: {:ok, binary()}
+  @spec eth_sign(binary(), binary(), list()) :: {:ok, binary()} | {:error, any()}
   @doc "Calculates an Ethereum specific signature and signs the data provided, using the accounts private key"
   def eth_sign(data0, data1, opts \\ []) do
     call_client(:request, ["eth_sign", [data0, data1], opts])
@@ -293,13 +296,13 @@ defmodule ExW3 do
     ExthCrypto.Hash.Keccak.kec(signature) |> Base.encode16(case: :lower)
   end
 
-  @spec eth_call([]) :: any()
+  @spec eth_call(list()) :: any()
   @doc "Simple eth_call to client. Recommended to use ExW3.Contract.call instead."
   def eth_call(arguments) do
     call_client(:eth_call, arguments)
   end
 
-  @spec eth_send([]) :: any()
+  @spec eth_send(list()) :: any()
   @doc "Simple eth_send_transaction. Recommended to use ExW3.Contract.send instead."
   def eth_send(arguments) do
     call_client(:eth_send_transaction, arguments)
@@ -318,7 +321,7 @@ defmodule ExW3 do
     ABI.TypeDecoder.decode(formatted_data, fs)
   end
 
-  @spec reformat_abi([]) :: %{}
+  @spec reformat_abi(list()) :: map()
   @doc "Reformats abi from list to map with event and function names as keys"
   def reformat_abi(abi) do
     abi
@@ -326,7 +329,7 @@ defmodule ExW3 do
     |> Map.new()
   end
 
-  @spec load_abi(binary()) :: []
+  @spec load_abi(binary()) :: list() | {:error, atom()}
   @doc "Loads the abi at the file path and reformats it to a map"
   def load_abi(file_path) do
     file = File.read(Path.join(System.cwd(), file_path))
@@ -356,7 +359,7 @@ defmodule ExW3 do
     ABI.decode(types_signature, trim_data) |> List.first()
   end
 
-  @spec decode_output(%{}, binary(), binary()) :: []
+  @spec decode_output(map(), binary(), binary()) :: list()
   @doc "Decodes output based on specified functions return signature"
   def decode_output(abi, name, output) do
     {:ok, trim_output} =
@@ -374,7 +377,7 @@ defmodule ExW3 do
     outputs
   end
 
-  @spec types_signature(%{}, binary()) :: binary()
+  @spec types_signature(map(), binary()) :: binary()
   @doc "Returns the type signature of a given function"
   def types_signature(abi, name) do
     input_types = Enum.map(abi[name]["inputs"], fn x -> x["type"] end)
@@ -382,7 +385,7 @@ defmodule ExW3 do
     types_signature
   end
 
-  @spec method_signature(%{}, binary()) :: binary()
+  @spec method_signature(map(), binary()) :: binary()
   @doc "Returns the 4 character method id based on the hash of the method signature"
   def method_signature(abi, name) do
     if abi[name] do
@@ -396,7 +399,7 @@ defmodule ExW3 do
     end
   end
 
-  @spec encode_data(binary(), []) :: binary()
+  @spec encode_data(binary(), list()) :: binary()
   @doc "Encodes data into Ethereum hex string based on types signature"
   def encode_data(types_signature, data) do
     ABI.TypeEncoder.encode_raw(
@@ -405,7 +408,7 @@ defmodule ExW3 do
     )
   end
 
-  @spec encode_options(%{}, []) :: %{}
+  @spec encode_options(map(), list()) :: map()
   @doc "Encodes list of options and returns them as a map"
   def encode_options(options, keys) do
     keys
@@ -432,7 +435,7 @@ defmodule ExW3 do
        |> String.trim_leading("0"))
   end
 
-  @spec encode_method_call(%{}, binary(), []) :: binary()
+  @spec encode_method_call(map(), binary(), list()) :: binary()
   @doc "Encodes data and appends it to the encoded method id"
   def encode_method_call(abi, name, input) do
     encoded_method_call =
@@ -441,7 +444,7 @@ defmodule ExW3 do
     encoded_method_call |> Base.encode16(case: :lower)
   end
 
-  @spec encode_input(%{}, binary(), []) :: binary()
+  @spec encode_input(map(), binary(), list()) :: binary()
   @doc "Encodes input from a method call based on function signature"
   def encode_input(abi, name, input) do
     if abi[name]["inputs"] do
@@ -486,13 +489,13 @@ defmodule ExW3 do
       GenServer.start_link(__MODULE__, %{filters: %{}}, name: ContractManager)
     end
 
-    @spec deploy(keyword(), []) :: {:ok, binary(), []}
+    @spec deploy(atom(), list()) :: {:ok, binary(), binary()}
     @doc "Deploys contracts with given arguments"
     def deploy(name, args) do
       GenServer.call(ContractManager, {:deploy, {name, args}})
     end
 
-    @spec register(keyword(), []) :: :ok
+    @spec register(atom(), list()) :: :ok
     @doc "Registers the contract with the ContractManager process. Only :abi is required field."
     def register(name, contract_info) do
       GenServer.cast(ContractManager, {:register, {name, contract_info}})
@@ -504,37 +507,37 @@ defmodule ExW3 do
       GenServer.cast(ContractManager, {:uninstall_filter, filter_id})
     end
 
-    @spec at(keyword(), binary()) :: :ok
+    @spec at(atom(), binary()) :: :ok
     @doc "Sets the address for the contract specified by the name argument"
     def at(name, address) do
       GenServer.cast(ContractManager, {:at, {name, address}})
     end
 
-    @spec address(keyword()) :: {:ok, binary()}
+    @spec address(atom()) :: {:ok, binary()}
     @doc "Returns the current Contract GenServer's address"
     def address(name) do
       GenServer.call(ContractManager, {:address, name})
     end
 
-    @spec call(keyword(), keyword(), []) :: {:ok, any()}
+    @spec call(atom(), atom(), list()) :: {:ok, any()}
     @doc "Use a Contract's method with an eth_call"
     def call(contract_name, method_name, args \\ []) do
       GenServer.call(ContractManager, {:call, {contract_name, method_name, args}})
     end
 
-    @spec send(keyword(), keyword(), [], %{}) :: {:ok, binary()}
+    @spec send(atom(), atom(), list(), map()) :: {:ok, binary()}
     @doc "Use a Contract's method with an eth_sendTransaction"
     def send(contract_name, method_name, args, options) do
       GenServer.call(ContractManager, {:send, {contract_name, method_name, args, options}})
     end
 
-    @spec tx_receipt(keyword(), binary()) :: %{}
+    @spec tx_receipt(atom(), binary()) :: map()
     @doc "Returns a formatted transaction receipt for the given transaction hash(id)"
     def tx_receipt(contract_name, tx_hash) do
       GenServer.call(ContractManager, {:tx_receipt, {contract_name, tx_hash}})
     end
 
-    @spec filter(keyword(), binary(), %{}) :: {:ok, binary()}
+    @spec filter(atom(), binary(), map()) :: {:ok, binary()}
     @doc "Installs a filter on the Ethereum node. This also formats the parameters, and saves relevant information to format event logs."
     def filter(contract_name, event_name, event_data \\ %{}) do
       GenServer.call(
@@ -543,7 +546,7 @@ defmodule ExW3 do
       )
     end
 
-    @spec get_filter_changes(binary()) :: {:ok, []}
+    @spec get_filter_changes(binary()) :: {:ok, list()}
     @doc "Using saved information related to the filter id, event logs are formatted properly"
     def get_filter_changes(filter_id) do
       GenServer.call(
