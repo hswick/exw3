@@ -2,8 +2,7 @@
 echo > passfile
 
 
-
-wget https://releases.parity.io/v1.8.5/x86_64-unknown-linux-gnu/parity
+wget https://releases.parity.io/ethereum/v1.8.5/x86_64-unknown-linux-gnu/parity
 
 chmod 755 ./parity
 echo > passfile
