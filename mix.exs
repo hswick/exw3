@@ -39,6 +39,7 @@ defmodule ExW3.MixProject do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:ethereumex, "~> 0.4.0"},
+      {:exth_crypto, "~> 0.1.6"},
       {:abi, "~> 0.1.8"},
       {:dialyxir, "~> 1.0.0-rc.5", only: [:dev], runtime: false},
       {:poison, "~> 4.0.1"}
