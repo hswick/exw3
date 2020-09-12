@@ -3,19 +3,19 @@ defmodule ExW3.MixProject do
 
   def project do
     [
-     app: :exw3,
-     version: "0.4.4",
-     elixir: "~> 1.7.2",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps(),
-     description: description(),
-     package: package(),
-     name: "exw3",
-     source_url: "https://github.com/hswick/exw3",
-     dialyzer: [
-       remove_defaults: [:unknown]
-     ]
+      app: :exw3,
+      version: "0.4.4",
+      elixir: "~> 1.9.4",
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
+      deps: deps(),
+      description: description(),
+      package: package(),
+      name: "exw3",
+      source_url: "https://github.com/hswick/exw3",
+      dialyzer: [
+        remove_defaults: [:unknown]
+      ]
     ]
   end
 

@@ -225,6 +225,15 @@ defmodule ExW3 do
     end
   end
 
+  @spec get_filter_logs(binary()) :: any()
+  @doc "Gets event changes (logs) by filter. Unlike ExW3.Contract.get_filter_logs it does not return the data in a formatted way"
+  def get_filter_logs(filter_id) do
+    case call_client(:eth_get_filter_logs, [filter_id]) do
+      {:ok, changes} -> changes
+      err -> err
+    end
+  end
+
   @spec uninstall_filter(binary()) :: boolean() | {:error, any()}
   @doc "Uninstalls filter from the ethereum node"
   def uninstall_filter(filter_id) do
@@ -552,6 +561,15 @@ defmodule ExW3 do
       GenServer.call(
         ContractManager,
         {:get_filter_changes, filter_id}
+      )
+    end
+
+    @spec get_filter_logs(binary()) :: {:ok, list()}
+    @doc "Using saved information related to the filter id, event logs are formatted properly"
+    def get_filter_logs(filter_id) do
+      GenServer.call(
+        ContractManager,
+        {:get_filter_logs, filter_id}
       )
     end
 
@@ -915,6 +933,39 @@ defmodule ExW3 do
                     "logIndex",
                     "transactionIndex",
                     "transactionLogIndex"
+                  ]),
+                  format_log_data(log, event_attributes)
+                ],
+                &Map.merge/2
+              )
+
+            formatted_log
+          end)
+        else
+          logs
+        end
+
+      {:reply, {:ok, formatted_logs}, state}
+    end
+
+    def handle_call({:get_filter_logs, filter_id}, _from, state) do
+      filter_info = Map.get(state[:filters], filter_id)
+
+      event_attributes =
+        get_event_attributes(state, filter_info[:contract_name], filter_info[:event_name])
+
+      logs = ExW3.get_filter_logs(filter_id)
+
+      formatted_logs =
+        if logs != [] do
+          Enum.map(logs, fn log ->
+            formatted_log =
+              Enum.reduce(
+                [
+                  ExW3.keys_to_decimal(log, [
+                    "blockNumber",
+                    "logIndex",
+                    "transactionIndex"
                   ]),
                   format_log_data(log, event_attributes)
                 ],
