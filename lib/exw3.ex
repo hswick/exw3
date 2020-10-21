@@ -66,7 +66,9 @@ defmodule ExW3 do
   @spec keccak256(binary()) :: binary()
   @doc "Returns a 0x prepended 32 byte hash of the input string"
   def keccak256(string) do
-    Enum.join(["0x", ExthCrypto.Hash.Keccak.kec(string) |> Base.encode16(case: :lower)], "")
+    {:ok, hash} = ExKeccak.hash_256(string)
+
+    Enum.join(["0x", hash |> Base.encode16(case: :lower)], "")
   end
 
   @spec bytes_to_string(binary()) :: binary()
@@ -98,8 +100,10 @@ defmodule ExW3 do
   def to_checksum_address(address) do
     address = String.replace(address, ~r/^0x/, "")
 
+    {:ok, hash_bin} = ExKeccak.hash_256(address)
+
     hash =
-      ExthCrypto.Hash.Keccak.kec(String.downcase(address))
+      hash_bin
       |> Base.encode16(case: :lower)
       |> String.replace(~r/^0x/, "")
 
@@ -293,7 +297,9 @@ defmodule ExW3 do
   @spec encode_event(binary()) :: binary()
   @doc "Encodes event based on signature"
   def encode_event(signature) do
-    ExthCrypto.Hash.Keccak.kec(signature) |> Base.encode16(case: :lower)
+    {:ok, hash} = ExKeccak.hash_256(string)
+
+    Base.encode16(hash, case: :lower)
   end
 
   @spec eth_call(list()) :: any()
@@ -335,7 +341,7 @@ defmodule ExW3 do
     file = File.read(Path.join(System.cwd(), file_path))
 
     case file do
-      {:ok, abi} -> reformat_abi(Poison.Parser.parse!(abi, %{}))
+      {:ok, abi} -> reformat_abi(Jason.decode!(abi, %{}))
       err -> err
     end
   end
@@ -389,7 +395,7 @@ defmodule ExW3 do
   @doc "Returns the 4 character method id based on the hash of the method signature"
   def method_signature(abi, name) do
     if abi[name] do
-      input_signature = "#{name}#{types_signature(abi, name)}" |> ExthCrypto.Hash.Keccak.kec()
+      {:ok, input_signature} = ExKeccak.hash_256("#{name}#{types_signature(abi, name)}")
 
       # Take first four bytes
       <<init::binary-size(4), _rest::binary>> = input_signature
@@ -450,7 +456,7 @@ defmodule ExW3 do
     if abi[name]["inputs"] do
       input_types = Enum.map(abi[name]["inputs"], fn x -> x["type"] end)
       types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
-      input_signature = "#{name}#{types_signature}" |> ExthCrypto.Hash.Keccak.kec()
+      {:ok, input_signature} = ExKeccak.hash_256("#{name}#{types_signature}")
 
       # Take first four bytes
       <<init::binary-size(4), _rest::binary>> = input_signature
