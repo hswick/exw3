@@ -519,10 +519,10 @@ defmodule ExW3 do
       GenServer.call(ContractManager, {:address, name})
     end
 
-    @spec call(atom(), atom(), list()) :: {:ok, any()}
+    @spec call(atom(), atom(), list(), any()) :: {:ok, any()}
     @doc "Use a Contract's method with an eth_call"
-    def call(contract_name, method_name, args \\ []) do
-      GenServer.call(ContractManager, {:call, {contract_name, method_name, args}}, :infinity)
+    def call(contract_name, method_name, args \\ [], timeout \\ :infinity) do
+      GenServer.call(ContractManager, {:call, {contract_name, method_name, args}}, timeout)
     end
 
     @spec send(atom(), atom(), list(), map()) :: {:ok, binary()}
