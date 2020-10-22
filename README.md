@@ -1,3 +1,10 @@
+This project is no longer under active development. PRs are welcome and are usually merged in a timely manner.
+
+My life took me in a different direction and I am currently not involved with Ethereum ecosystem and such this
+library isn't useful for me. Although, this has seemed to be useful for others and I am glad to see that.
+
+If you might be willing to take this project over, please feel free to reach out to me.
+
 <p align="center">
   <img src="./exw3_logo.jpg"/>
 </p>
