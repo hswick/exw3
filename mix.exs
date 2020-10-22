@@ -3,19 +3,19 @@ defmodule ExW3.MixProject do
 
   def project do
     [
-     app: :exw3,
-     version: "0.4.4",
-     elixir: "~> 1.10",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps(),
-     description: description(),
-     package: package(),
-     name: "exw3",
-     source_url: "https://github.com/hswick/exw3",
-     dialyzer: [
-       remove_defaults: [:unknown]
-     ]
+      app: :exw3,
+      version: "0.4.4",
+      elixir: "~> 1.10",
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
+      deps: deps(),
+      description: description(),
+      package: package(),
+      name: "exw3",
+      source_url: "https://github.com/hswick/exw3",
+      dialyzer: [
+        remove_defaults: [:unknown]
+      ]
     ]
   end
 
@@ -38,11 +38,11 @@ defmodule ExW3.MixProject do
   defp deps do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
-      {:ethereumex, "~> 0.4.0"},
-      {:exth_crypto, "~> 0.1.6"},
-      {:abi, "~> 0.1.8"},
+      {:ethereumex, "~> 0.6.4"},
+      {:ex_keccak, "~> 0.1.2"},
+      {:ex_abi, "~> 0.5.1"},
       {:dialyxir, "~> 1.0.0-rc.5", only: [:dev], runtime: false},
-      {:poison, "~> 4.0.1"}
+      {:jason, "~> 1.2"}
     ]
   end
 
