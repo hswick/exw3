@@ -260,8 +260,9 @@ defmodule ExW3 do
 
   @spec personal_unlock_account(binary(), list()) :: {:ok, boolean()} | {:error, any()}
   @doc "Using the personal api, this method unlocks account using the passphrase provided, and returns a boolean."
-  def personal_unlock_account(password, opts) do
-    call_client(:request, ["personal_unlockAccount", [password], opts])
+  ### E.g. ExW3.personal_unlock_account(["0x1234","Password",30], [])
+  def personal_unlock_account(params, opts \\ []) do
+    call_client(:request, ["personal_unlockAccount", params, opts])
   end
 
   @spec personal_send_transaction(map(), binary(), list()) :: {:ok, binary()} | {:error, any()}
@@ -677,11 +678,13 @@ defmodule ExW3 do
         end
 
       gas = ExW3.encode_option(args[:options][:gas])
+      gasPrice = ExW3.encode_option(args[:options][:gas_price])
 
       tx = %{
         from: args[:options][:from],
         data: "0x#{constructor_arg_data}",
-        gas: gas
+        gas: gas,
+        gasPrice: gasPrice
       }
 
       {:ok, tx_hash} = ExW3.eth_send([tx])
@@ -713,11 +716,16 @@ defmodule ExW3 do
           [:gas, :gasPrice, :value, :nonce]
         )
 
+      gas = ExW3.encode_option(args[:options][:gas])
+      gasPrice = ExW3.encode_option(args[:options][:gas_price])
+
       ExW3.eth_send([
         Map.merge(
           %{
             to: address,
-            data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
+            data: "0x#{ExW3.encode_method_call(abi, method_name, args)}",
+            gas: gas,
+            gasPrice: gasPrice
           },
           Map.merge(options, encoded_options)
         )
@@ -743,8 +751,7 @@ defmodule ExW3 do
     # Casts
 
     def handle_cast({:at, {name, address}}, state) do
-      contract_info = state[name]
-      {:noreply, Map.put(state, name, contract_info ++ [address: address])}
+      {:noreply, Map.put(state, name, address: address)}
     end
 
     def handle_cast({:register, {name, contract_info}}, state) do
