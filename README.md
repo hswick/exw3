@@ -1,3 +1,7 @@
+# ExW3
+
+[![Build Status](https://travis-ci.org/hswick/exw3.svg?branch=master)](https://travis-ci.org/hswick/exw3)
+
 This project is no longer under active development. PRs are welcome and are usually merged in a timely manner.
 
 My life took me in a different direction and I am currently not involved with Ethereum ecosystem and such this
