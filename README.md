@@ -13,7 +13,7 @@ If you might be willing to take this project over, please feel free to reach out
 
 ```elixir
 def deps do
-  [{:exw3, "~> 0.4.2"}]
+  [{:exw3, "~> 0.4.4"}]
 end
 ```
 ## Overview
