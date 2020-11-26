@@ -298,7 +298,7 @@ defmodule ExW3 do
   @spec encode_event(binary()) :: binary()
   @doc "Encodes event based on signature"
   def encode_event(signature) do
-    {:ok, hash} = ExKeccak.hash_256(string)
+    {:ok, hash} = ExKeccak.hash_256(signature)
 
     Base.encode16(hash, case: :lower)
   end
