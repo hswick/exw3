@@ -23,7 +23,7 @@ defmodule ExW3.MixProject do
   #
   # Type `mix help compile.app` for more information
   def application do
-    [applications: [:logger, :ethereumex]]
+    [applications: [:logger, :ex_abi, :ethereumex]]
   end
 
   # Dependencies can be Hex packages:
