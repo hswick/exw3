@@ -925,8 +925,7 @@ defmodule ExW3 do
                   ExW3.keys_to_decimal(log, [
                     "blockNumber",
                     "logIndex",
-                    "transactionIndex",
-                    "transactionLogIndex"
+                    "transactionIndex"
                   ]),
                   format_log_data(log, event_attributes)
                 ],
