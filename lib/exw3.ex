@@ -488,7 +488,7 @@ defmodule ExW3 do
 
     @spec start_link() :: {:ok, pid()}
     @doc "Begins the Contract process to manage all interactions with smart contracts"
-    def start_link() do
+    def start_link(_ \\ :ok) do
       GenServer.start_link(__MODULE__, %{filters: %{}}, name: ContractManager)
     end
 
@@ -747,7 +747,10 @@ defmodule ExW3 do
     # Casts
 
     def handle_cast({:at, {name, address}}, state) do
-      {:noreply, Map.put(state, name, address: address)}
+      contract_state = state[name]
+      contract_state = Keyword.put(contract_state, :address, address)
+      state = Map.put(state, name, contract_state)
+      {:noreply, state}
     end
 
     def handle_cast({:register, {name, contract_info}}, state) do
