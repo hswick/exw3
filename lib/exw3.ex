@@ -98,7 +98,7 @@ defmodule ExW3 do
   @spec to_checksum_address(binary()) :: binary()
   @doc "returns a checksummed address"
   def to_checksum_address(address) do
-    address = String.replace(address, ~r/^0x/, "")
+    address = address |> String.downcase() |> String.replace(~r/^0x/, "")
 
     {:ok, hash_bin} = ExKeccak.hash_256(address)
 
