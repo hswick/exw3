@@ -1,6 +1,5 @@
-# just to be safe
-echo > passfile
-
+# Install Parity blockchain tests on Github action
+echo > passfile # just to be safe
 
 wget https://releases.parity.io/ethereum/v1.8.5/x86_64-unknown-linux-gnu/parity
 
@@ -11,4 +10,4 @@ echo > passfile
 
 PARITY_PID=$!
 sleep 10
-kill -9 $(lsof -t -i:8545)
+kill -9 $(lsof -t -i:8545) # cleanup old zombie instances

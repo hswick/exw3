@@ -1,6 +1,7 @@
 # ExW3
 
-[![Build Status](https://travis-ci.org/hswick/exw3.svg?branch=master)](https://travis-ci.org/hswick/exw3)
+[![Build Status](https://github.com/hswick/exw3/workflows/test/badge.svg?branch=master)](https://github.com/hswick/exw3/actions?query=workflow%3Atest)
+[![hex.pm version](https://img.shields.io/hexpm/v/exw3.svg?style=flat)](https://hex.pm/packages/exw3)
 
 This project is no longer under active development. PRs are welcome and are usually merged in a timely manner.
 

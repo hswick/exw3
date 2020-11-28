@@ -1,0 +1,58 @@
+name: test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+
+    strategy:
+      matrix:
+        otp: [22.x, 23.x]
+        elixir: [1.10.x, 1.11.x]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-elixir@v1.5
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Cache Dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+            deps
+            _build/dev
+            _build/test
+          key: elixir-cache-${{secrets.CACHE_VERSION}}-${{matrix.elixir}}-otp-${{matrix.otp}}-${{runner.os}}-${{hashFiles('mix.lock')}}-${{github.ref}}
+          restore-keys: |
+            elixir-cache-${{secrets.CACHE_VERSION}}-${{matrix.elixir}}-otp-${{matrix.otp}}-${{runner.os}}-${{hashFiles('mix.lock')}}-
+            elixir-cache-${{secrets.CACHE_VERSION}}-${{matrix.elixir}}-otp-${{matrix.otp}}-${{runner.os}}-
+
+      - name: Install Dependencies
+        run: mix deps.get
+
+      - name: Install Parity Blockchain
+        run: .github/install_parity.sh
+
+      - name: Run Parity Blockchain
+        run:  ./parity --chain dev --unlock=0x00a329c0648769a73afac7f9381e08fb43dbea72 --reseal-min-period 0 --password passfile &
+
+      - name: Test
+        run: mix test
+
+      - name: Dialyzer
+        run: mix dialyzer --halt-exit-status
