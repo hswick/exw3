@@ -98,7 +98,7 @@ defmodule ExW3 do
   @spec to_checksum_address(binary()) :: binary()
   @doc "returns a checksummed address"
   def to_checksum_address(address) do
-    address = String.replace(address, ~r/^0x/, "")
+    address = address |> String.downcase() |> String.replace(~r/^0x/, "")
 
     {:ok, hash_bin} = ExKeccak.hash_256(address)
 
@@ -298,7 +298,7 @@ defmodule ExW3 do
   @spec encode_event(binary()) :: binary()
   @doc "Encodes event based on signature"
   def encode_event(signature) do
-    {:ok, hash} = ExKeccak.hash_256(string)
+    {:ok, hash} = ExKeccak.hash_256(signature)
 
     Base.encode16(hash, case: :lower)
   end
@@ -339,22 +339,18 @@ defmodule ExW3 do
   @spec load_abi(binary()) :: list() | {:error, atom()}
   @doc "Loads the abi at the file path and reformats it to a map"
   def load_abi(file_path) do
-    file = File.read(Path.join(File.cwd(), file_path))
-
-    case file do
-      {:ok, abi} -> reformat_abi(Jason.decode!(abi, %{}))
-      err -> err
+    with {:ok, cwd} <- File.cwd(),
+         {:ok, abi} <- File.read(Path.join([cwd, file_path])) do
+      reformat_abi(Jason.decode!(abi))
     end
   end
 
   @spec load_bin(binary()) :: binary()
   @doc "Loads the bin ar the file path"
   def load_bin(file_path) do
-    file = File.read(Path.join(File.cwd(), file_path))
-
-    case file do
-      {:ok, bin} -> bin
-      err -> err
+    with {:ok, cwd} <- File.cwd(),
+         {:ok, bin} <- File.read(Path.join([cwd, file_path])) do
+      bin
     end
   end
 
@@ -492,7 +488,7 @@ defmodule ExW3 do
 
     @spec start_link() :: {:ok, pid()}
     @doc "Begins the Contract process to manage all interactions with smart contracts"
-    def start_link() do
+    def start_link(_ \\ :ok) do
       GenServer.start_link(__MODULE__, %{filters: %{}}, name: ContractManager)
     end
 
@@ -751,7 +747,10 @@ defmodule ExW3 do
     # Casts
 
     def handle_cast({:at, {name, address}}, state) do
-      {:noreply, Map.put(state, name, address: address)}
+      contract_state = state[name]
+      contract_state = Keyword.put(contract_state, :address, address)
+      state = Map.put(state, name, contract_state)
+      {:noreply, state}
     end
 
     def handle_cast({:register, {name, contract_info}}, state) do
@@ -926,8 +925,7 @@ defmodule ExW3 do
                   ExW3.keys_to_decimal(log, [
                     "blockNumber",
                     "logIndex",
-                    "transactionIndex",
-                    "transactionLogIndex"
+                    "transactionIndex"
                   ]),
                   format_log_data(log, event_attributes)
                 ],
