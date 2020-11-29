@@ -41,7 +41,7 @@ defmodule ExW3.MixProject do
       {:ethereumex, "~> 0.6.4"},
       {:ex_keccak, "~> 0.1.2"},
       {:ex_abi, "~> 0.5.1"},
-      {:dialyxir, "~> 1.0.0-rc.5", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:jason, "~> 1.2"}
     ]
   end
