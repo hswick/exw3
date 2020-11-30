@@ -27,4 +27,4 @@ use Mix.Config
 config :ethereumex,
   url: "http://localhost:8545",
   client_type: :ipc,
-  ipc_path: "/.local/share/io.parity.ethereum/jsonrpc.ipc"
+  ipc_path: "/workspace/hswick/exw3/docker/openethereum/jsonrpc.ipc"
