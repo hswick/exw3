@@ -86,4 +86,33 @@ defmodule ExW3.Utils do
       throw("#{key} not valid unit")
     end
   end
+
+  @doc "Returns a checksummed address conforming to EIP-55"
+  @spec to_checksum_address(String.t()) :: String.t()
+  def to_checksum_address(address) do
+    address = address |> String.downcase() |> String.replace(~r/^0x/, "")
+    {:ok, hash_bin} = ExKeccak.hash_256(address)
+
+    hash =
+      hash_bin
+      |> Base.encode16(case: :lower)
+      |> String.replace(~r/^0x/, "")
+
+    keccak_hash_list =
+      hash
+      |> String.split("", trim: true)
+      |> Enum.map(fn x -> elem(Integer.parse(x, 16), 0) end)
+
+    list_arr =
+      for n <- 0..(String.length(address) - 1) do
+        number = Enum.at(keccak_hash_list, n)
+
+        cond do
+          number >= 8 -> String.upcase(String.at(address, n))
+          true -> String.downcase(String.at(address, n))
+        end
+      end
+
+    "0x" <> List.to_string(list_arr)
+  end
 end

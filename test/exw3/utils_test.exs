@@ -99,4 +99,52 @@ defmodule ExW3.UtilsTest do
       assert ExW3.Utils.from_wei(1_000_000_000_000_000_000, :tether) == 0.000000000001
     end
   end
+
+  describe ".to_checksum_address/1" do
+    test "returns checksum for all caps address" do
+      assert ExW3.Utils.to_checksum_address(
+               String.downcase("0x52908400098527886E0F7030069857D2E4169EE7")
+             ) ==
+               "0x52908400098527886E0F7030069857D2E4169EE7"
+
+      assert ExW3.Utils.to_checksum_address(
+               String.downcase("0x8617E340B3D01FA5F11F306F4090FD50E238070D")
+             ) ==
+               "0x8617E340B3D01FA5F11F306F4090FD50E238070D"
+    end
+
+    test "returns checksumfor all lowercase address" do
+      assert ExW3.Utils.to_checksum_address(
+               String.downcase("0xde709f2102306220921060314715629080e2fb77")
+             ) ==
+               "0xde709f2102306220921060314715629080e2fb77"
+
+      assert ExW3.Utils.to_checksum_address(
+               String.downcase("0x27b1fdb04752bbc536007a920d24acb045561c26")
+             ) ==
+               "0x27b1fdb04752bbc536007a920d24acb045561c26"
+    end
+
+    test "returns checksum for normal addresses" do
+      assert ExW3.Utils.to_checksum_address(
+               String.downcase("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
+             ) ==
+               "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed"
+
+      assert ExW3.Utils.to_checksum_address(
+               String.downcase("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359")
+             ) ==
+               "0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359"
+
+      assert ExW3.Utils.to_checksum_address(
+               String.downcase("0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB")
+             ) ==
+               "0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB"
+
+      assert ExW3.Utils.to_checksum_address(
+               String.downcase("0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb")
+             ) ==
+               "0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb"
+    end
+  end
 end
