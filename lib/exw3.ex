@@ -224,6 +224,30 @@ defmodule ExW3 do
     end
   end
 
+  @type invalid_hex_string_error :: ExW3.Utils.invalid_hex_string_error()
+  @type request_error :: Ethereumex.Client.Behaviour.error()
+  @type opts :: keyword
+  @type latest :: String.t()
+  @type earliest :: String.t()
+  @type pending :: String.t()
+  @type hex_block_number :: String.t()
+  @type log_filter :: %{
+          optional(:address) => String.t(),
+          optional(:fromBlock) => hex_block_number | latest | earliest | pending,
+          optional(:toBlock) => hex_block_number | latest | earliest | pending,
+          optional(:topics) => [String.t()],
+          optional(:blockhash) => String.t()
+        }
+
+  @spec get_logs(log_filter, opts) :: {:ok, list} | {:error, term} | request_error
+  def get_logs(filter, opts \\ []) do
+    with {:ok, _} = result <- ExW3.Client.call_client(:eth_get_logs, [filter, opts]) do
+      result
+    else
+      err -> err
+    end
+  end
+
   @spec mine(integer()) :: any() | {:error, any()}
   @doc "Mines number of blocks specified. Default is 1"
   def mine(num_blocks \\ 1) do
@@ -291,196 +315,6 @@ defmodule ExW3 do
   @doc "Simple eth_send_transaction. Recommended to use ExW3.Contract.send instead."
   def eth_send(arguments) do
     ExW3.Client.call_client(:eth_send_transaction, arguments)
-  end
-
-  @spec decode_event(binary(), binary()) :: any()
-  @doc "Decodes event based on given data and provided signature"
-  def decode_event(data, signature) do
-    formatted_data =
-      data
-      |> String.slice(2..-1)
-      |> Base.decode16!(case: :lower)
-
-    fs = ABI.FunctionSelector.decode(signature)
-
-    ABI.TypeDecoder.decode(formatted_data, fs)
-  end
-
-  @spec reformat_abi(list()) :: map()
-  @doc "Reformats abi from list to map with event and function names as keys"
-  def reformat_abi(abi) do
-    abi
-    |> Enum.map(&map_abi/1)
-    |> Map.new()
-  end
-
-  @spec load_abi(binary()) :: list() | {:error, atom()}
-  @doc "Loads the abi at the file path and reformats it to a map"
-  def load_abi(file_path) do
-    with {:ok, cwd} <- File.cwd(),
-         {:ok, abi} <- File.read(Path.join([cwd, file_path])) do
-      reformat_abi(Jason.decode!(abi))
-    end
-  end
-
-  @spec load_bin(binary()) :: binary()
-  @doc "Loads the bin ar the file path"
-  def load_bin(file_path) do
-    with {:ok, cwd} <- File.cwd(),
-         {:ok, bin} <- File.read(Path.join([cwd, file_path])) do
-      bin
-    end
-  end
-
-  @spec decode_data(binary(), binary()) :: any()
-  @doc "Decodes data based on given type signature"
-  def decode_data(types_signature, data) do
-    {:ok, trim_data} = String.slice(data, 2..String.length(data)) |> Base.decode16(case: :lower)
-
-    ABI.decode(types_signature, trim_data) |> List.first()
-  end
-
-  @spec decode_output(map(), binary(), binary()) :: list()
-  @doc "Decodes output based on specified functions return signature"
-  def decode_output(abi, name, output) do
-    {:ok, trim_output} =
-      String.slice(output, 2..String.length(output)) |> Base.decode16(case: :lower)
-
-    output_types = Enum.map(abi[name]["outputs"], fn x -> x["type"] end)
-    types_signature = Enum.join(["(", Enum.join(output_types, ","), ")"])
-    output_signature = "#{name}(#{types_signature})"
-
-    outputs =
-      ABI.decode(output_signature, trim_output)
-      |> List.first()
-      |> Tuple.to_list()
-
-    outputs
-  end
-
-  @spec types_signature(map(), binary()) :: binary()
-  @doc "Returns the type signature of a given function"
-  def types_signature(abi, name) do
-    input_types = Enum.map(abi[name]["inputs"], fn x -> x["type"] end)
-    types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
-    types_signature
-  end
-
-  @spec method_signature(map(), binary()) :: binary()
-  @doc "Returns the 4 character method id based on the hash of the method signature"
-  def method_signature(abi, name) do
-    if abi[name] do
-      {:ok, input_signature} = ExKeccak.hash_256("#{name}#{types_signature(abi, name)}")
-
-      # Take first four bytes
-      <<init::binary-size(4), _rest::binary>> = input_signature
-      init
-    else
-      raise "#{name} method not found in the given abi"
-    end
-  end
-
-  @spec encode_data(binary(), list()) :: binary()
-  @doc "Encodes data into Ethereum hex string based on types signature"
-  def encode_data(types_signature, data) do
-    ABI.TypeEncoder.encode_raw(
-      [List.to_tuple(data)],
-      ABI.FunctionSelector.decode_raw(types_signature)
-    )
-  end
-
-  @spec encode_options(map(), list()) :: map()
-  @doc "Encodes list of options and returns them as a map"
-  def encode_options(options, keys) do
-    keys
-    |> Enum.filter(fn option ->
-      Map.has_key?(options, option)
-    end)
-    |> Enum.map(fn option ->
-      {option, encode_option(options[option])}
-    end)
-    |> Enum.into(%{})
-  end
-
-  @spec encode_option(integer()) :: binary()
-  @doc "Encodes options into Ethereum JSON RPC hex string"
-  def encode_option(0), do: "0x0"
-
-  def encode_option(nil), do: nil
-
-  def encode_option(value) do
-    "0x" <>
-      (value
-       |> :binary.encode_unsigned()
-       |> Base.encode16(case: :lower)
-       |> String.trim_leading("0"))
-  end
-
-  @spec encode_method_call(map(), binary(), list()) :: binary()
-  @doc "Encodes data and appends it to the encoded method id"
-  def encode_method_call(abi, name, input) do
-    encoded_method_call =
-      method_signature(abi, name) <> encode_data(types_signature(abi, name), input)
-
-    encoded_method_call |> Base.encode16(case: :lower)
-  end
-
-  @spec encode_input(map(), binary(), list()) :: binary()
-  @doc "Encodes input from a method call based on function signature"
-  def encode_input(abi, name, input) do
-    if abi[name]["inputs"] do
-      input_types = Enum.map(abi[name]["inputs"], fn x -> x["type"] end)
-      types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
-      {:ok, input_signature} = ExKeccak.hash_256("#{name}#{types_signature}")
-
-      # Take first four bytes
-      <<init::binary-size(4), _rest::binary>> = input_signature
-
-      encoded_input =
-        init <>
-          ABI.TypeEncoder.encode_raw(
-            [List.to_tuple(input)],
-            ABI.FunctionSelector.decode_raw(types_signature)
-          )
-
-      encoded_input |> Base.encode16(case: :lower)
-    else
-      raise "#{name} method not found with the given abi"
-    end
-  end
-
-  @type invalid_hex_string_error :: ExW3.Utils.invalid_hex_string_error()
-  @type request_error :: Ethereumex.Client.Behaviour.error()
-  @type opts :: keyword
-  @type latest :: String.t()
-  @type earliest :: String.t()
-  @type pending :: String.t()
-  @type hex_block_number :: String.t()
-  @type log_filter :: %{
-          optional(:address) => String.t(),
-          optional(:fromBlock) => hex_block_number | latest | earliest | pending,
-          optional(:toBlock) => hex_block_number | latest | earliest | pending,
-          optional(:topics) => [String.t()],
-          optional(:blockhash) => String.t()
-        }
-
-  @spec get_logs(log_filter, opts) :: {:ok, list} | {:error, term} | request_error
-  def get_logs(filter, opts \\ []) do
-    with {:ok, _} = result <- ExW3.Client.call_client(:eth_get_logs, [filter, opts]) do
-      result
-    else
-      err -> err
-    end
-  end
-
-  # ABI mapper
-
-  defp map_abi(x) do
-    case {x["name"], x["type"]} do
-      {nil, "constructor"} -> {:constructor, x}
-      {nil, "fallback"} -> {:fallback, x}
-      {name, _} -> {name, x}
-    end
   end
 
   defmodule Contract do
@@ -665,7 +499,8 @@ defmodule ExW3 do
                     } args, looking for #{input_types_count}."
             end
 
-            bin <> (ExW3.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
+            bin <>
+              (ExW3.Abi.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
           else
             # IO.warn("Could not find a constructor")
             bin
@@ -674,8 +509,8 @@ defmodule ExW3 do
           bin
         end
 
-      gas = ExW3.encode_option(args[:options][:gas])
-      gasPrice = ExW3.encode_option(args[:options][:gas_price])
+      gas = ExW3.Abi.encode_option(args[:options][:gas])
+      gasPrice = ExW3.Abi.encode_option(args[:options][:gas_price])
 
       tx = %{
         from: args[:options][:from],
@@ -696,31 +531,34 @@ defmodule ExW3 do
         ExW3.eth_call([
           %{
             to: address,
-            data: "0x#{ExW3.encode_method_call(abi, method_name, args)}"
+            data: "0x#{ExW3.Abi.encode_method_call(abi, method_name, args)}"
           }
         ])
 
       case result do
-        {:ok, data} -> ([:ok] ++ ExW3.decode_output(abi, method_name, data)) |> List.to_tuple()
-        {:error, err} -> {:error, err}
+        {:ok, data} ->
+          ([:ok] ++ ExW3.Abi.decode_output(abi, method_name, data)) |> List.to_tuple()
+
+        {:error, err} ->
+          {:error, err}
       end
     end
 
     def eth_send_helper(address, abi, method_name, args, options) do
       encoded_options =
-        ExW3.encode_options(
+        ExW3.Abi.encode_options(
           options,
           [:gas, :gasPrice, :value, :nonce]
         )
 
-      gas = ExW3.encode_option(args[:options][:gas])
-      gasPrice = ExW3.encode_option(args[:options][:gas_price])
+      gas = ExW3.Abi.encode_option(args[:options][:gas])
+      gasPrice = ExW3.Abi.encode_option(args[:options][:gas_price])
 
       ExW3.eth_send([
         Map.merge(
           %{
             to: address,
-            data: "0x#{ExW3.encode_method_call(abi, method_name, args)}",
+            data: "0x#{ExW3.Abi.encode_method_call(abi, method_name, args)}",
             gas: gas,
             gasPrice: gasPrice
           },
@@ -785,11 +623,11 @@ defmodule ExW3 do
                 topic_type = Enum.at(topic_types, i)
 
                 Enum.map(topic, fn t ->
-                  "0x" <> (ExW3.encode_data(topic_type, [t]) |> Base.encode16(case: :lower))
+                  "0x" <> (ExW3.Abi.encode_data(topic_type, [t]) |> Base.encode16(case: :lower))
                 end)
               else
                 topic_type = Enum.at(topic_types, i)
-                "0x" <> (ExW3.encode_data(topic_type, [topic]) |> Base.encode16(case: :lower))
+                "0x" <> (ExW3.Abi.encode_data(topic_type, [topic]) |> Base.encode16(case: :lower))
               end
             else
               topic
@@ -808,7 +646,7 @@ defmodule ExW3 do
           if Enum.member?(["latest", "earliest", "pending"], event_data[:fromBlock]) do
             event_data[:fromBlock]
           else
-            ExW3.encode_data("(uint256)", [event_data[:fromBlock]])
+            ExW3.Abi.encode_data("(uint256)", [event_data[:fromBlock]])
           end
 
         Map.put(event_data, :fromBlock, new_from_block)
@@ -824,7 +662,8 @@ defmodule ExW3 do
             event_data[key]
           else
             "0x" <>
-              (ExW3.encode_data("(uint256)", [event_data[key]]) |> Base.encode16(case: :lower))
+              (ExW3.Abi.encode_data("(uint256)", [event_data[key]])
+               |> Base.encode16(case: :lower))
           end
 
         Map.put(event_data, key, new_param)
@@ -846,7 +685,7 @@ defmodule ExW3 do
     end
 
     defp extract_non_indexed_fields(data, names, signature) do
-      Enum.zip(names, ExW3.decode_event(data, signature)) |> Enum.into(%{})
+      Enum.zip(names, ExW3.Abi.decode_event(data, signature)) |> Enum.into(%{})
     end
 
     defp format_log_data(log, event_attributes) do
@@ -866,7 +705,7 @@ defmodule ExW3 do
               topic_type = Enum.at(event_attributes[:topic_types], i)
               topic_data = Enum.at(tail, i)
 
-              {decoded} = ExW3.decode_data(topic_type, topic_data)
+              {decoded} = ExW3.Abi.decode_data(topic_type, topic_data)
 
               decoded
             end)
@@ -1009,7 +848,7 @@ defmodule ExW3 do
             non_indexed_fields =
               Enum.zip(
                 event_attributes[:non_indexed_names],
-                ExW3.decode_event(log["data"], event_attributes[:signature])
+                ExW3.Abi.decode_event(log["data"], event_attributes[:signature])
               )
               |> Enum.into(%{})
 
@@ -1021,7 +860,7 @@ defmodule ExW3 do
                   topic_type = Enum.at(event_attributes[:topic_types], i)
                   topic_data = Enum.at(tail, i)
 
-                  {decoded} = ExW3.decode_data(topic_type, topic_data)
+                  {decoded} = ExW3.Abi.decode_data(topic_type, topic_data)
 
                   decoded
                 end)
