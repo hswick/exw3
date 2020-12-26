@@ -32,4 +32,15 @@ defmodule ExW3.UtilsTest do
       assert ExW3.Utils.integer_to_hex(1.1) == {:error, :non_integer}
     end
   end
+
+  describe ".keccak256/1" do
+    test "returns a 0x prepended 32 byte hash of the input" do
+      hex_hash = ExW3.Utils.keccak256("foo")
+      assert "0x" <> hash = hex_hash
+      assert hash == "41b1a0649752af1b28b3dc29a1556eee781e4a4c3a1f7f53f90fa834de098c4d"
+
+      num_bytes = byte_size(hash)
+      assert trunc(num_bytes / 2) == 32
+    end
+  end
 end

@@ -1,4 +1,4 @@
-defmodule EXW3Test do
+defmodule ExW3Test do
   use ExUnit.Case
   doctest ExW3
 
@@ -44,20 +44,6 @@ defmodule EXW3Test do
   #   ExW3.mine(5)
   #   assert ExW3.block_number() == block_number + 5
   # end
-
-  test "keccak256 hash some data" do
-    hash = ExW3.keccak256("foo")
-    assert String.slice(hash, 0..1) == "0x"
-
-    assert hash == "0x41b1a0649752af1b28b3dc29a1556eee781e4a4c3a1f7f53f90fa834de098c4d"
-
-    num_bytes =
-      hash
-      |> String.slice(2..-1)
-      |> byte_size
-
-    assert trunc(num_bytes / 2) == 32
-  end
 
   test "starts a Contract GenServer for simple storage contract", context do
     ExW3.Contract.register(:SimpleStorage, abi: context[:simple_storage_abi])
@@ -559,7 +545,7 @@ defmodule EXW3Test do
     filter = %{
       fromBlock: from_block,
       toBlock: "latest",
-      topics: [ExW3.keccak256("Simple(uint256,bytes32)")]
+      topics: [ExW3.Utils.keccak256("Simple(uint256,bytes32)")]
     }
 
     assert {:ok, logs} = ExW3.get_logs(filter)

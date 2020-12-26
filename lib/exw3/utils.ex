@@ -29,4 +29,11 @@ defmodule ExW3.Utils do
     ArgumentError ->
       {:error, :non_integer}
   end
+
+  @doc "Returns a 0x prepended 32 byte hash of the input string"
+  @spec keccak256(String.t()) :: String.t()
+  def keccak256(string) do
+    {:ok, hash} = ExKeccak.hash_256(string)
+    "0x#{Base.encode16(hash, case: :lower)}"
+  end
 end

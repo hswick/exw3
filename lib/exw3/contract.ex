@@ -102,7 +102,7 @@ defmodule ExW3.Contract do
       Enum.map(events, fn {name, v} ->
         types = Enum.map(v["inputs"], &Map.get(&1, "type"))
         signature = Enum.join([name, "(", Enum.join(types, ","), ")"])
-        encoded_event_signature = ExW3.keccak256(signature)
+        encoded_event_signature = ExW3.Utils.keccak256(signature)
 
         indexed_fields =
           Enum.filter(v["inputs"], fn input ->
