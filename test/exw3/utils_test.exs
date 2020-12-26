@@ -43,4 +43,43 @@ defmodule ExW3.UtilsTest do
       assert trunc(num_bytes / 2) == 32
     end
   end
+
+  describe ".to_wei/2" do
+    test "converts a unit to_wei" do
+      assert ExW3.Utils.to_wei(1, :wei) == 1
+      assert ExW3.Utils.to_wei(1, :kwei) == 1_000
+      assert ExW3.Utils.to_wei(1, :Kwei) == 1_000
+      assert ExW3.Utils.to_wei(1, :babbage) == 1_000
+      assert ExW3.Utils.to_wei(1, :mwei) == 1_000_000
+      assert ExW3.Utils.to_wei(1, :Mwei) == 1_000_000
+      assert ExW3.Utils.to_wei(1, :lovelace) == 1_000_000
+      assert ExW3.Utils.to_wei(1, :gwei) == 1_000_000_000
+      assert ExW3.Utils.to_wei(1, :Gwei) == 1_000_000_000
+      assert ExW3.Utils.to_wei(1, :shannon) == 1_000_000_000
+      assert ExW3.Utils.to_wei(1, :szabo) == 1_000_000_000_000
+      assert ExW3.Utils.to_wei(1, :finney) == 1_000_000_000_000_000
+      assert ExW3.Utils.to_wei(1, :ether) == 1_000_000_000_000_000_000
+      assert ExW3.Utils.to_wei(1, :kether) == 1_000_000_000_000_000_000_000
+      assert ExW3.Utils.to_wei(1, :grand) == 1_000_000_000_000_000_000_000
+      assert ExW3.Utils.to_wei(1, :mether) == 1_000_000_000_000_000_000_000_000
+      assert ExW3.Utils.to_wei(1, :gether) == 1_000_000_000_000_000_000_000_000_000
+      assert ExW3.Utils.to_wei(1, :tether) == 1_000_000_000_000_000_000_000_000_000_000
+
+      assert ExW3.Utils.to_wei(1, :kwei) == ExW3.Utils.to_wei(1, :femtoether)
+      assert ExW3.Utils.to_wei(1, :szabo) == ExW3.Utils.to_wei(1, :microether)
+      assert ExW3.Utils.to_wei(1, :finney) == ExW3.Utils.to_wei(1, :milliether)
+      assert ExW3.Utils.to_wei(1, :milli) == ExW3.Utils.to_wei(1, :milliether)
+      assert ExW3.Utils.to_wei(1, :milli) == ExW3.Utils.to_wei(1000, :micro)
+
+      {:ok, agent} = Agent.start_link(fn -> false end)
+
+      try do
+        ExW3.Utils.to_wei(1, :wei1)
+      catch
+        _ -> Agent.update(agent, fn _ -> true end)
+      end
+
+      assert Agent.get(agent, fn state -> state end)
+    end
+  end
 end
