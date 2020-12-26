@@ -463,6 +463,30 @@ defmodule ExW3 do
     end
   end
 
+  @type invalid_hex_string_error :: ExW3.Utils.invalid_hex_string_error()
+  @type request_error :: Ethereumex.Client.Behaviour.error()
+  @type opts :: keyword
+  @type latest :: String.t()
+  @type earliest :: String.t()
+  @type pending :: String.t()
+  @type hex_block_number :: String.t()
+  @type log_filter :: %{
+          optional(:address) => String.t(),
+          optional(:fromBlock) => hex_block_number | latest | earliest | pending,
+          optional(:toBlock) => hex_block_number | latest | earliest | pending,
+          optional(:topics) => [String.t()],
+          optional(:blockhash) => String.t()
+        }
+
+  @spec get_logs(log_filter, opts) :: {:ok, list} | {:error, term} | request_error
+  def get_logs(filter, opts \\ []) do
+    with {:ok, _} = result <- ExW3.Client.call_client(:eth_get_logs, [filter, opts]) do
+      result
+    else
+      err -> err
+    end
+  end
+
   # ABI mapper
 
   defp map_abi(x) do
