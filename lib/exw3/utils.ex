@@ -115,4 +115,10 @@ defmodule ExW3.Utils do
 
     "0x" <> List.to_string(list_arr)
   end
+
+  @doc "Checks if the address is a valid checksummed address"
+  @spec is_valid_checksum_address(String.t()) :: boolean
+  def is_valid_checksum_address(address) do
+    ExW3.Utils.to_checksum_address(address) == address
+  end
 end

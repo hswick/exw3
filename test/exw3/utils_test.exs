@@ -147,4 +147,37 @@ defmodule ExW3.UtilsTest do
                "0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb"
     end
   end
+
+  describe ".is_valid_checksum_address/1" do
+    test "returns valid check for is_valid_checksum_address()" do
+      assert ExW3.Utils.is_valid_checksum_address("0x52908400098527886E0F7030069857D2E4169EE7") ==
+               true
+
+      assert ExW3.Utils.is_valid_checksum_address("0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB") ==
+               true
+
+      assert ExW3.Utils.is_valid_checksum_address("0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb") ==
+               true
+
+      assert ExW3.Utils.is_valid_checksum_address("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed") ==
+               true
+
+      assert ExW3.Utils.is_valid_checksum_address("0x27b1fdb04752bbc536007a920d24acb045561c26") ==
+               true
+
+      assert ExW3.Utils.is_valid_checksum_address("0xde709f2102306220921060314715629080e2fb77") ==
+               true
+
+      assert ExW3.Utils.is_valid_checksum_address("0x8617E340B3D01FA5F11F306F4090FD50E238070D") ==
+               true
+
+      assert ExW3.Utils.is_valid_checksum_address("0x52908400098527886E0F7030069857D2E4169EE7") ==
+               true
+    end
+
+    test "returns invalid check for is_valid_checksum_address()" do
+      assert ExW3.Utils.is_valid_checksum_address("0x2f015c60e0be116b1f0cd534704db9c92118fb6a") ==
+               false
+    end
+  end
 end

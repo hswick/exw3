@@ -23,12 +23,6 @@ defmodule ExW3 do
     Enum.join(["0x", bytes |> Base.encode16(case: :lower)], "")
   end
 
-  @doc "checks if the address is a valid checksummed address"
-  @spec is_valid_checksum_address(binary()) :: boolean()
-  def is_valid_checksum_address(address) do
-    ExW3.Utils.to_checksum_address(address) == address
-  end
-
   @spec accounts() :: list()
   @doc "returns all available accounts"
   def accounts do
