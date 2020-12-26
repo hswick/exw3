@@ -6,3 +6,4 @@ erl_crash.dump
 *.tar
 /doc
 passfile
+docker/openethereum

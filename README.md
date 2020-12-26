@@ -199,3 +199,14 @@ To compile the test solidity contracts after making a change run this command:
 ```
 solc --abi --bin --overwrite -o test/examples/build test/examples/contracts/*.sol
 ```
+
+# Contributing
+
+## Test
+
+The full test suite requires a running blockchain. You can run your own or start `openethereum` with `docker-compose`.
+
+```bash
+$ docker-compose up
+$ mix test
+```
