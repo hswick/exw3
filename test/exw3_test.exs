@@ -461,21 +461,6 @@ defmodule ExW3Test do
              ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
   end
 
-  test "unit conversion from wei" do
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :wei) == 1_000_000_000_000_000_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :kwei) == 1_000_000_000_000_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :mwei) == 1_000_000_000_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :gwei) == 1_000_000_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :szabo) == 1_000_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :finney) == 1_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :ether) == 1
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :kether) == 0.001
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :grand) == 0.001
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :mether) == 0.000001
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :gether) == 0.000000001
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :tether) == 0.000000000001
-  end
-
   test ".get_logs/1", context do
     ExW3.Contract.register(:EventTester, abi: context[:event_tester_abi])
 

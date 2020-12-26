@@ -76,4 +76,14 @@ defmodule ExW3.Utils do
       throw("#{key} not valid unit")
     end
   end
+
+  @doc "Converts the value to whatever unit key is provided. See unit map for details."
+  @spec from_wei(integer, atom) :: integer | float | no_return
+  def from_wei(num, key) do
+    if @unit_map[key] do
+      num / @unit_map[key]
+    else
+      throw("#{key} not valid unit")
+    end
+  end
 end
