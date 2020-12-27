@@ -1,6 +1,5 @@
 defmodule ExW3 do
   Module.register_attribute(__MODULE__, :unit_map, persist: true, accumulate: false)
-  Module.register_attribute(__MODULE__, :client_type, persist: true, accumulate: false)
 
   @unit_map %{
     :noether => 0,
@@ -31,11 +30,6 @@ defmodule ExW3 do
     :gether => 1_000_000_000_000_000_000_000_000_000,
     :tether => 1_000_000_000_000_000_000_000_000_000_000
   }
-
-  @spec get_client_type() :: atom()
-  def get_client_type do
-    Application.get_env(:ethereumex, :client_type, :http)
-  end
 
   @spec get_unit_map() :: map()
   @doc "Returns the map used for ether unit conversion"
