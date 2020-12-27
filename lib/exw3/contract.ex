@@ -194,16 +194,15 @@ defmodule ExW3.Contract do
       gasPrice: gasPrice
     }
 
-    {:ok, tx_hash} = ExW3.eth_send([tx])
-
-    {:ok, tx_receipt} = ExW3.tx_receipt(tx_hash)
+    {:ok, tx_hash} = ExW3.Rpc.eth_send([tx])
+    {:ok, tx_receipt} = ExW3.Rpc.tx_receipt(tx_hash)
 
     {tx_receipt["contractAddress"], tx_hash}
   end
 
   def eth_call_helper(address, abi, method_name, args) do
     result =
-      ExW3.eth_call([
+      ExW3.Rpc.eth_call([
         %{
           to: address,
           data: "0x#{ExW3.Abi.encode_method_call(abi, method_name, args)}"
@@ -229,7 +228,7 @@ defmodule ExW3.Contract do
     gas = ExW3.Abi.encode_option(args[:options][:gas])
     gasPrice = ExW3.Abi.encode_option(args[:options][:gas_price])
 
-    ExW3.eth_send([
+    ExW3.Rpc.eth_send([
       Map.merge(
         %{
           to: address,
@@ -410,7 +409,7 @@ defmodule ExW3.Contract do
         event_data_format_helper(event_data)
       )
 
-    filter_id = ExW3.new_filter(payload)
+    filter_id = ExW3.Rpc.new_filter(payload)
 
     {:reply, {:ok, filter_id},
      Map.put(
@@ -429,7 +428,7 @@ defmodule ExW3.Contract do
     event_attributes =
       get_event_attributes(state, filter_info[:contract_name], filter_info[:event_name])
 
-    logs = ExW3.get_filter_changes(filter_id)
+    logs = ExW3.Rpc.get_filter_changes(filter_id)
 
     formatted_logs =
       if logs != [] do
