@@ -2,7 +2,7 @@ defmodule EXW3.ContractTest do
   use ExUnit.Case
   doctest ExW3.Contract
 
-  @simple_storage_abi ExW3.load_abi("test/examples/build/SimpleStorage.abi")
+  @simple_storage_abi ExW3.Abi.load_abi("test/examples/build/SimpleStorage.abi")
 
   setup_all do
     start_supervised!(ExW3.Contract)
@@ -19,7 +19,7 @@ defmodule EXW3.ContractTest do
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :SimpleStorage,
-        bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+        bin: ExW3.Abi.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
           gas: 300_000,
@@ -45,7 +45,7 @@ defmodule EXW3.ContractTest do
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :SimpleStorage,
-        bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+        bin: ExW3.Abi.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
           gas: 300_000,

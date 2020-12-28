@@ -6,11 +6,11 @@ defmodule EXW3Test do
     ExW3.Contract.start_link()
 
     %{
-      simple_storage_abi: ExW3.load_abi("test/examples/build/SimpleStorage.abi"),
-      array_tester_abi: ExW3.load_abi("test/examples/build/ArrayTester.abi"),
-      event_tester_abi: ExW3.load_abi("test/examples/build/EventTester.abi"),
-      complex_abi: ExW3.load_abi("test/examples/build/Complex.abi"),
-      address_tester_abi: ExW3.load_abi("test/examples/build/AddressTester.abi"),
+      simple_storage_abi: ExW3.Abi.load_abi("test/examples/build/SimpleStorage.abi"),
+      array_tester_abi: ExW3.Abi.load_abi("test/examples/build/ArrayTester.abi"),
+      event_tester_abi: ExW3.Abi.load_abi("test/examples/build/EventTester.abi"),
+      complex_abi: ExW3.Abi.load_abi("test/examples/build/Complex.abi"),
+      address_tester_abi: ExW3.Abi.load_abi("test/examples/build/AddressTester.abi"),
       accounts: ExW3.accounts()
     }
   end
@@ -65,7 +65,7 @@ defmodule EXW3Test do
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :SimpleStorage,
-        bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+        bin: ExW3.Abi.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
           gas: 300_000,
@@ -97,7 +97,7 @@ defmodule EXW3Test do
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :ArrayTester,
-        bin: ExW3.load_bin("test/examples/build/ArrayTester.bin"),
+        bin: ExW3.Abi.load_bin("test/examples/build/ArrayTester.bin"),
         options: %{
           gas: 300_000,
           from: Enum.at(context[:accounts], 0)
@@ -125,7 +125,7 @@ defmodule EXW3Test do
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :EventTester,
-        bin: ExW3.load_bin("test/examples/build/EventTester.bin"),
+        bin: ExW3.Abi.load_bin("test/examples/build/EventTester.bin"),
         options: %{
           gas: 300_000,
           from: Enum.at(context[:accounts], 0)
@@ -191,7 +191,7 @@ defmodule EXW3Test do
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :EventTester,
-        bin: ExW3.load_bin("test/examples/build/EventTester.bin"),
+        bin: ExW3.Abi.load_bin("test/examples/build/EventTester.bin"),
         options: %{
           gas: 300_000,
           from: Enum.at(context[:accounts], 0)
@@ -320,7 +320,7 @@ defmodule EXW3Test do
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :Complex,
-        bin: ExW3.load_bin("test/examples/build/Complex.bin"),
+        bin: ExW3.Abi.load_bin("test/examples/build/Complex.bin"),
         args: [42, "Hello, world!"],
         options: %{
           from: Enum.at(context[:accounts], 0),
@@ -345,7 +345,7 @@ defmodule EXW3Test do
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :AddressTester,
-        bin: ExW3.load_bin("test/examples/build/AddressTester.bin"),
+        bin: ExW3.Abi.load_bin("test/examples/build/AddressTester.bin"),
         options: %{
           from: Enum.at(context[:accounts], 0),
           gas: 300_000
@@ -416,7 +416,7 @@ defmodule EXW3Test do
     assert {:error, :missing_gas} ==
              ExW3.Contract.deploy(
                :SimpleStorage,
-               bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+               bin: ExW3.Abi.load_bin("test/examples/build/SimpleStorage.bin"),
                args: [],
                options: %{
                  from: Enum.at(context[:accounts], 0)
@@ -426,7 +426,7 @@ defmodule EXW3Test do
     assert {:error, :missing_sender} ==
              ExW3.Contract.deploy(
                :SimpleStorage,
-               bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+               bin: ExW3.Abi.load_bin("test/examples/build/SimpleStorage.bin"),
                args: [],
                options: %{
                  gas: 300_000
@@ -450,7 +450,7 @@ defmodule EXW3Test do
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :SimpleStorage,
-        bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"),
+        bin: ExW3.Abi.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
           gas: 300_000,
@@ -533,7 +533,7 @@ defmodule EXW3Test do
     {:ok, address, _} =
       ExW3.Contract.deploy(
         :EventTester,
-        bin: ExW3.load_bin("test/examples/build/EventTester.bin"),
+        bin: ExW3.Abi.load_bin("test/examples/build/EventTester.bin"),
         options: %{
           gas: 300_000,
           from: Enum.at(context[:accounts], 0)
