@@ -344,7 +344,7 @@ defmodule ExW3Test do
 
     formatted_address =
       Enum.at(context[:accounts], 0)
-      |> ExW3.format_address()
+      |> ExW3.Utils.format_address()
 
     {:ok, same_address} = ExW3.Contract.call(:AddressTester, :get, [formatted_address])
 

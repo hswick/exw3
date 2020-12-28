@@ -130,4 +130,13 @@ defmodule ExW3.Utils do
     |> String.replace_trailing("0", "")
     |> Base.decode16!(case: :lower)
   end
+
+  @doc "Converts an Ethereum address into a form that can be used by the ABI encoder"
+  @spec format_address(binary()) :: integer()
+  def format_address(address) do
+    address
+    |> String.slice(2..-1)
+    |> Base.decode16!(case: :lower)
+    |> :binary.decode_unsigned()
+  end
 end
