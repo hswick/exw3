@@ -281,14 +281,6 @@ defmodule ExW3 do
     ExW3.Client.call_client(:request, ["eth_sign", [data0, data1], opts])
   end
 
-  @spec encode_event(binary()) :: binary()
-  @doc "Encodes event based on signature"
-  def encode_event(signature) do
-    {:ok, hash} = ExKeccak.hash_256(signature)
-
-    Base.encode16(hash, case: :lower)
-  end
-
   @spec eth_call(list()) :: any()
   @doc "Simple eth_call to client. Recommended to use ExW3.Contract.call instead."
   def eth_call(arguments) do
@@ -575,8 +567,7 @@ defmodule ExW3 do
         Enum.map(events, fn {name, v} ->
           types = Enum.map(v["inputs"], &Map.get(&1, "type"))
           signature = Enum.join([name, "(", Enum.join(types, ","), ")"])
-
-          encoded_event_signature = "0x#{ExW3.encode_event(signature)}"
+          encoded_event_signature = ExW3.keccak256(signature)
 
           indexed_fields =
             Enum.filter(v["inputs"], fn input ->
