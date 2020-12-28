@@ -1,13 +1,4 @@
 defmodule ExW3 do
-  @spec bytes_to_string(binary()) :: binary()
-  @doc "converts Ethereum style bytes to string"
-  def bytes_to_string(bytes) do
-    bytes
-    |> Base.encode16(case: :lower)
-    |> String.replace_trailing("0", "")
-    |> Base.decode16!(case: :lower)
-  end
-
   @spec format_address(binary()) :: integer()
   @doc "Converts an Ethereum address into a form that can be used by the ABI encoder"
   def format_address(address) do

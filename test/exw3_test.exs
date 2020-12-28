@@ -136,7 +136,7 @@ defmodule ExW3Test do
       logs
       |> Enum.at(0)
       |> Map.get("data")
-      |> ExW3.bytes_to_string()
+      |> ExW3.Utils.bytes_to_string()
 
     assert data == "Hello, World!"
 
@@ -166,7 +166,7 @@ defmodule ExW3Test do
       logs
       |> Enum.at(0)
       |> Map.get("data")
-      |> ExW3.bytes_to_string()
+      |> ExW3.Utils.bytes_to_string()
 
     assert data == "Hello, World!"
   end
@@ -206,7 +206,7 @@ defmodule ExW3Test do
     log_data = Map.get(event_log, "data")
     assert log_data |> is_map
     assert Map.get(log_data, "num") == 42
-    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
 
     ExW3.Contract.uninstall_filter(filter_id)
 
@@ -230,7 +230,7 @@ defmodule ExW3Test do
     log_data = Map.get(event_log, "data")
     assert log_data |> is_map
     assert Map.get(log_data, "num") == 46
-    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
     ExW3.Contract.uninstall_filter(indexed_filter_id)
 
@@ -262,7 +262,7 @@ defmodule ExW3Test do
     log_data = Map.get(event_log, "data")
     assert log_data |> is_map
     assert Map.get(log_data, "num") == 46
-    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
 
     ExW3.Contract.uninstall_filter(indexed_filter_id)
@@ -294,7 +294,7 @@ defmodule ExW3Test do
     log_data = Map.get(event_log, "data")
     assert log_data |> is_map
     assert Map.get(log_data, "num") == 46
-    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
 
     ExW3.Contract.uninstall_filter(indexed_filter_id)
@@ -322,7 +322,7 @@ defmodule ExW3Test do
 
     assert foo == 42
 
-    assert ExW3.bytes_to_string(foobar) == "Hello, world!"
+    assert ExW3.Utils.bytes_to_string(foobar) == "Hello, world!"
   end
 
   test "starts a Contract GenServer for AddressTester contract", context do

@@ -121,4 +121,13 @@ defmodule ExW3.Utils do
   def is_valid_checksum_address(address) do
     ExW3.Utils.to_checksum_address(address) == address
   end
+
+  @doc "converts Ethereum style bytes to string"
+  @spec bytes_to_string(binary()) :: binary()
+  def bytes_to_string(bytes) do
+    bytes
+    |> Base.encode16(case: :lower)
+    |> String.replace_trailing("0", "")
+    |> Base.decode16!(case: :lower)
+  end
 end
