@@ -8,20 +8,13 @@ defmodule ExW3 do
     end
   end
 
-  @spec to_decimal(binary()) :: number()
-  @doc "Converts ethereum hex string to decimal number"
-  def to_decimal(hex_string) do
-    hex_string
-    |> String.slice(2..-1)
-    |> String.to_integer(16)
-  end
-
   @spec block_number() :: integer()
   @doc "Returns the current block number"
   def block_number do
     case ExW3.Client.call_client(:eth_block_number) do
-      {:ok, block_number} ->
-        block_number |> to_decimal
+      {:ok, hex_block_number} ->
+        {:ok, block_number} = ExW3.Utils.hex_to_integer(hex_block_number)
+        block_number
 
       err ->
         err
@@ -32,17 +25,13 @@ defmodule ExW3 do
   @doc "Returns current balance of account"
   def balance(account) do
     case ExW3.Client.call_client(:eth_get_balance, [account]) do
-      {:ok, balance} ->
-        balance |> to_decimal
+      {:ok, hex_balance} ->
+        {:ok, balance} = ExW3.Utils.hex_to_integer(hex_balance)
+        balance
 
       err ->
         err
     end
-  end
-
-  @spec keys_to_decimal(map(), list()) :: map()
-  def keys_to_decimal(map, keys) do
-    for k <- keys, into: %{}, do: {k, map |> Map.get(k) |> to_decimal()}
   end
 
   @spec tx_receipt(binary()) :: {:ok, map()} | {:error, any()}
@@ -53,9 +42,10 @@ defmodule ExW3 do
         {:error, :not_mined}
 
       {:ok, receipt} ->
-        decimal_res = keys_to_decimal(receipt, ~w(blockNumber cumulativeGasUsed gasUsed))
+        normalized_receipt =
+          ExW3.Normalize.transform_to_integer(receipt, ~w(blockNumber cumulativeGasUsed gasUsed))
 
-        {:ok, Map.merge(receipt, decimal_res)}
+        {:ok, Map.merge(receipt, normalized_receipt)}
 
       err ->
         {:error, err}

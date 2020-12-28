@@ -437,7 +437,7 @@ defmodule ExW3.Contract do
           formatted_log =
             Enum.reduce(
               [
-                ExW3.keys_to_decimal(log, [
+                ExW3.Normalize.transform_to_integer(log, [
                   "blockNumber",
                   "logIndex",
                   "transactionIndex"
