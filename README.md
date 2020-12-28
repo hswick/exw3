@@ -74,7 +74,7 @@ iex(2)> ExW3.balance(Enum.at(accounts, 0))
 1606938044258990275541962092341162602522200978938292835291376
 iex(3)> ExW3.block_number()
 1252
-iex(4)> simple_storage_abi = ExW3.load_abi("test/examples/build/SimpleStorage.abi")
+iex(4)> simple_storage_abi = ExW3.Abi.load_abi("test/examples/build/SimpleStorage.abi")
 %{
   "get" => %{
     "constant" => true,
@@ -99,7 +99,7 @@ iex(5)> ExW3.Contract.start_link
 {:ok, #PID<0.265.0>}
 iex(6)> ExW3.Contract.register(:SimpleStorage, abi: simple_storage_abi)
 :ok
-iex(7)> {:ok, address, tx_hash} = ExW3.Contract.deploy(:SimpleStorage, bin: ExW3.load_bin("test/examples/build/SimpleStorage.bin"), options: %{gas: 300_000, from: Enum.at(accounts, 0)})
+iex(7)> {:ok, address, tx_hash} = ExW3.Contract.deploy(:SimpleStorage, bin: ExW3.Abi.load_bin("test/examples/build/SimpleStorage.bin"), options: %{gas: 300_000, from: Enum.at(accounts, 0)})
 {:ok, "0x22018c2bb98387a39e864cf784e76cb8971889a5",
  "0x4ea539048c01194476004ef69f407a10628bed64e88ee8f8b17b4d030d0e7cb7"}
 iex(8)> ExW3.Contract.at(:SimpleStorage, address)
