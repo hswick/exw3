@@ -348,7 +348,7 @@ defmodule ExW3Test do
 
     {:ok, same_address} = ExW3.Contract.call(:AddressTester, :get, [formatted_address])
 
-    assert ExW3.to_address(same_address) == Enum.at(context[:accounts], 0)
+    assert ExW3.Utils.to_address(same_address) == Enum.at(context[:accounts], 0)
   end
 
   test "returns proper error messages at contract deployment", context do

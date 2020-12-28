@@ -1,10 +1,4 @@
 defmodule ExW3 do
-  @spec to_address(binary()) :: binary()
-  @doc "Converts bytes to Ethereum address"
-  def to_address(bytes) do
-    Enum.join(["0x", bytes |> Base.encode16(case: :lower)], "")
-  end
-
   @spec accounts() :: list()
   @doc "returns all available accounts"
   def accounts do

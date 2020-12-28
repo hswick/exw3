@@ -139,4 +139,10 @@ defmodule ExW3.Utils do
     |> Base.decode16!(case: :lower)
     |> :binary.decode_unsigned()
   end
+
+  @doc "Converts bytes to Ethereum address"
+  @spec to_address(binary()) :: binary()
+  def to_address(bytes) do
+    Enum.join(["0x", bytes |> Base.encode16(case: :lower)], "")
+  end
 end
