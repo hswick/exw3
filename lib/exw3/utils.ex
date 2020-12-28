@@ -29,4 +29,120 @@ defmodule ExW3.Utils do
     ArgumentError ->
       {:error, :non_integer}
   end
+
+  @doc "Returns a 0x prepended 32 byte hash of the input string"
+  @spec keccak256(String.t()) :: String.t()
+  def keccak256(string) do
+    {:ok, hash} = ExKeccak.hash_256(string)
+    "0x#{Base.encode16(hash, case: :lower)}"
+  end
+
+  @unit_map %{
+    :noether => 0,
+    :wei => 1,
+    :kwei => 1_000,
+    :Kwei => 1_000,
+    :babbage => 1_000,
+    :femtoether => 1_000,
+    :mwei => 1_000_000,
+    :Mwei => 1_000_000,
+    :lovelace => 1_000_000,
+    :picoether => 1_000_000,
+    :gwei => 1_000_000_000,
+    :Gwei => 1_000_000_000,
+    :shannon => 1_000_000_000,
+    :nanoether => 1_000_000_000,
+    :nano => 1_000_000_000,
+    :szabo => 1_000_000_000_000,
+    :microether => 1_000_000_000_000,
+    :micro => 1_000_000_000_000,
+    :finney => 1_000_000_000_000_000,
+    :milliether => 1_000_000_000_000_000,
+    :milli => 1_000_000_000_000_000,
+    :ether => 1_000_000_000_000_000_000,
+    :kether => 1_000_000_000_000_000_000_000,
+    :grand => 1_000_000_000_000_000_000_000,
+    :mether => 1_000_000_000_000_000_000_000_000,
+    :gether => 1_000_000_000_000_000_000_000_000_000,
+    :tether => 1_000_000_000_000_000_000_000_000_000_000
+  }
+
+  @doc "Converts the value to whatever unit key is provided. See unit map for details."
+  @spec to_wei(integer, atom) :: integer
+  def to_wei(num, key) do
+    if @unit_map[key] do
+      num * @unit_map[key]
+    else
+      throw("#{key} not valid unit")
+    end
+  end
+
+  @doc "Converts the value to whatever unit key is provided. See unit map for details."
+  @spec from_wei(integer, atom) :: integer | float | no_return
+  def from_wei(num, key) do
+    if @unit_map[key] do
+      num / @unit_map[key]
+    else
+      throw("#{key} not valid unit")
+    end
+  end
+
+  @doc "Returns a checksummed address conforming to EIP-55"
+  @spec to_checksum_address(String.t()) :: String.t()
+  def to_checksum_address(address) do
+    address = address |> String.downcase() |> String.replace(~r/^0x/, "")
+    {:ok, hash_bin} = ExKeccak.hash_256(address)
+
+    hash =
+      hash_bin
+      |> Base.encode16(case: :lower)
+      |> String.replace(~r/^0x/, "")
+
+    keccak_hash_list =
+      hash
+      |> String.split("", trim: true)
+      |> Enum.map(fn x -> elem(Integer.parse(x, 16), 0) end)
+
+    list_arr =
+      for n <- 0..(String.length(address) - 1) do
+        number = Enum.at(keccak_hash_list, n)
+
+        cond do
+          number >= 8 -> String.upcase(String.at(address, n))
+          true -> String.downcase(String.at(address, n))
+        end
+      end
+
+    "0x" <> List.to_string(list_arr)
+  end
+
+  @doc "Checks if the address is a valid checksummed address"
+  @spec is_valid_checksum_address(String.t()) :: boolean
+  def is_valid_checksum_address(address) do
+    ExW3.Utils.to_checksum_address(address) == address
+  end
+
+  @doc "converts Ethereum style bytes to string"
+  @spec bytes_to_string(binary()) :: binary()
+  def bytes_to_string(bytes) do
+    bytes
+    |> Base.encode16(case: :lower)
+    |> String.replace_trailing("0", "")
+    |> Base.decode16!(case: :lower)
+  end
+
+  @doc "Converts an Ethereum address into a form that can be used by the ABI encoder"
+  @spec format_address(binary()) :: integer()
+  def format_address(address) do
+    address
+    |> String.slice(2..-1)
+    |> Base.decode16!(case: :lower)
+    |> :binary.decode_unsigned()
+  end
+
+  @doc "Converts bytes to Ethereum address"
+  @spec to_address(binary()) :: binary()
+  def to_address(bytes) do
+    Enum.join(["0x", bytes |> Base.encode16(case: :lower)], "")
+  end
 end

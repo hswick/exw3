@@ -1,4 +1,4 @@
-defmodule EXW3Test do
+defmodule ExW3Test do
   use ExUnit.Case
   doctest ExW3
 
@@ -44,20 +44,6 @@ defmodule EXW3Test do
   #   ExW3.mine(5)
   #   assert ExW3.block_number() == block_number + 5
   # end
-
-  test "keccak256 hash some data" do
-    hash = ExW3.keccak256("foo")
-    assert String.slice(hash, 0..1) == "0x"
-
-    assert hash == "0x41b1a0649752af1b28b3dc29a1556eee781e4a4c3a1f7f53f90fa834de098c4d"
-
-    num_bytes =
-      hash
-      |> String.slice(2..-1)
-      |> byte_size
-
-    assert trunc(num_bytes / 2) == 32
-  end
 
   test "starts a Contract GenServer for simple storage contract", context do
     ExW3.Contract.register(:SimpleStorage, abi: context[:simple_storage_abi])
@@ -150,7 +136,7 @@ defmodule EXW3Test do
       logs
       |> Enum.at(0)
       |> Map.get("data")
-      |> ExW3.bytes_to_string()
+      |> ExW3.Utils.bytes_to_string()
 
     assert data == "Hello, World!"
 
@@ -180,7 +166,7 @@ defmodule EXW3Test do
       logs
       |> Enum.at(0)
       |> Map.get("data")
-      |> ExW3.bytes_to_string()
+      |> ExW3.Utils.bytes_to_string()
 
     assert data == "Hello, World!"
   end
@@ -220,7 +206,7 @@ defmodule EXW3Test do
     log_data = Map.get(event_log, "data")
     assert log_data |> is_map
     assert Map.get(log_data, "num") == 42
-    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
 
     ExW3.Contract.uninstall_filter(filter_id)
 
@@ -244,7 +230,7 @@ defmodule EXW3Test do
     log_data = Map.get(event_log, "data")
     assert log_data |> is_map
     assert Map.get(log_data, "num") == 46
-    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
     ExW3.Contract.uninstall_filter(indexed_filter_id)
 
@@ -276,7 +262,7 @@ defmodule EXW3Test do
     log_data = Map.get(event_log, "data")
     assert log_data |> is_map
     assert Map.get(log_data, "num") == 46
-    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
 
     ExW3.Contract.uninstall_filter(indexed_filter_id)
@@ -308,7 +294,7 @@ defmodule EXW3Test do
     log_data = Map.get(event_log, "data")
     assert log_data |> is_map
     assert Map.get(log_data, "num") == 46
-    assert ExW3.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
     assert Map.get(log_data, "otherNum") == 42
 
     ExW3.Contract.uninstall_filter(indexed_filter_id)
@@ -336,7 +322,7 @@ defmodule EXW3Test do
 
     assert foo == 42
 
-    assert ExW3.bytes_to_string(foobar) == "Hello, world!"
+    assert ExW3.Utils.bytes_to_string(foobar) == "Hello, world!"
   end
 
   test "starts a Contract GenServer for AddressTester contract", context do
@@ -358,56 +344,11 @@ defmodule EXW3Test do
 
     formatted_address =
       Enum.at(context[:accounts], 0)
-      |> ExW3.format_address()
+      |> ExW3.Utils.format_address()
 
     {:ok, same_address} = ExW3.Contract.call(:AddressTester, :get, [formatted_address])
 
-    assert ExW3.to_address(same_address) == Enum.at(context[:accounts], 0)
-  end
-
-  test "returns checksum for all caps address" do
-    assert ExW3.to_checksum_address(String.downcase("0x52908400098527886E0F7030069857D2E4169EE7")) ==
-             "0x52908400098527886E0F7030069857D2E4169EE7"
-
-    assert ExW3.to_checksum_address(String.downcase("0x8617E340B3D01FA5F11F306F4090FD50E238070D")) ==
-             "0x8617E340B3D01FA5F11F306F4090FD50E238070D"
-  end
-
-  test "returns checksumfor all lowercase address" do
-    assert ExW3.to_checksum_address(String.downcase("0xde709f2102306220921060314715629080e2fb77")) ==
-             "0xde709f2102306220921060314715629080e2fb77"
-
-    assert ExW3.to_checksum_address(String.downcase("0x27b1fdb04752bbc536007a920d24acb045561c26")) ==
-             "0x27b1fdb04752bbc536007a920d24acb045561c26"
-  end
-
-  test "returns checksum for normal addresses" do
-    assert ExW3.to_checksum_address(String.downcase("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")) ==
-             "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed"
-
-    assert ExW3.to_checksum_address(String.downcase("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359")) ==
-             "0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359"
-
-    assert ExW3.to_checksum_address(String.downcase("0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB")) ==
-             "0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB"
-
-    assert ExW3.to_checksum_address(String.downcase("0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb")) ==
-             "0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb"
-  end
-
-  test "returns valid check for is_valid_checksum_address()" do
-    assert ExW3.is_valid_checksum_address("0x52908400098527886E0F7030069857D2E4169EE7") == true
-    assert ExW3.is_valid_checksum_address("0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB") == true
-    assert ExW3.is_valid_checksum_address("0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb") == true
-    assert ExW3.is_valid_checksum_address("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed") == true
-    assert ExW3.is_valid_checksum_address("0x27b1fdb04752bbc536007a920d24acb045561c26") == true
-    assert ExW3.is_valid_checksum_address("0xde709f2102306220921060314715629080e2fb77") == true
-    assert ExW3.is_valid_checksum_address("0x8617E340B3D01FA5F11F306F4090FD50E238070D") == true
-    assert ExW3.is_valid_checksum_address("0x52908400098527886E0F7030069857D2E4169EE7") == true
-  end
-
-  test "returns invalid check for is_valid_checksum_address()" do
-    assert ExW3.is_valid_checksum_address("0x2f015c60e0be116b1f0cd534704db9c92118fb6a") == false
+    assert ExW3.Utils.to_address(same_address) == Enum.at(context[:accounts], 0)
   end
 
   test "returns proper error messages at contract deployment", context do
@@ -475,58 +416,6 @@ defmodule EXW3Test do
              ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
   end
 
-  test "unit conversion to_wei" do
-    assert ExW3.to_wei(1, :wei) == 1
-    assert ExW3.to_wei(1, :kwei) == 1_000
-    assert ExW3.to_wei(1, :Kwei) == 1_000
-    assert ExW3.to_wei(1, :babbage) == 1_000
-    assert ExW3.to_wei(1, :mwei) == 1_000_000
-    assert ExW3.to_wei(1, :Mwei) == 1_000_000
-    assert ExW3.to_wei(1, :lovelace) == 1_000_000
-    assert ExW3.to_wei(1, :gwei) == 1_000_000_000
-    assert ExW3.to_wei(1, :Gwei) == 1_000_000_000
-    assert ExW3.to_wei(1, :shannon) == 1_000_000_000
-    assert ExW3.to_wei(1, :szabo) == 1_000_000_000_000
-    assert ExW3.to_wei(1, :finney) == 1_000_000_000_000_000
-    assert ExW3.to_wei(1, :ether) == 1_000_000_000_000_000_000
-    assert ExW3.to_wei(1, :kether) == 1_000_000_000_000_000_000_000
-    assert ExW3.to_wei(1, :grand) == 1_000_000_000_000_000_000_000
-    assert ExW3.to_wei(1, :mether) == 1_000_000_000_000_000_000_000_000
-    assert ExW3.to_wei(1, :gether) == 1_000_000_000_000_000_000_000_000_000
-    assert ExW3.to_wei(1, :tether) == 1_000_000_000_000_000_000_000_000_000_000
-
-    assert ExW3.to_wei(1, :kwei) == ExW3.to_wei(1, :femtoether)
-    assert ExW3.to_wei(1, :szabo) == ExW3.to_wei(1, :microether)
-    assert ExW3.to_wei(1, :finney) == ExW3.to_wei(1, :milliether)
-    assert ExW3.to_wei(1, :milli) == ExW3.to_wei(1, :milliether)
-    assert ExW3.to_wei(1, :milli) == ExW3.to_wei(1000, :micro)
-
-    {:ok, agent} = Agent.start_link(fn -> false end)
-
-    try do
-      ExW3.to_wei(1, :wei1)
-    catch
-      _ -> Agent.update(agent, fn _ -> true end)
-    end
-
-    assert Agent.get(agent, fn state -> state end)
-  end
-
-  test "unit conversion from wei" do
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :wei) == 1_000_000_000_000_000_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :kwei) == 1_000_000_000_000_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :mwei) == 1_000_000_000_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :gwei) == 1_000_000_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :szabo) == 1_000_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :finney) == 1_000
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :ether) == 1
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :kether) == 0.001
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :grand) == 0.001
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :mether) == 0.000001
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :gether) == 0.000000001
-    assert ExW3.from_wei(1_000_000_000_000_000_000, :tether) == 0.000000000001
-  end
-
   test ".get_logs/1", context do
     ExW3.Contract.register(:EventTester, abi: context[:event_tester_abi])
 
@@ -559,7 +448,7 @@ defmodule EXW3Test do
     filter = %{
       fromBlock: from_block,
       toBlock: "latest",
-      topics: [ExW3.keccak256("Simple(uint256,bytes32)")]
+      topics: [ExW3.Utils.keccak256("Simple(uint256,bytes32)")]
     }
 
     assert {:ok, logs} = ExW3.get_logs(filter)
