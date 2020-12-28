@@ -12,14 +12,6 @@ defmodule ExW3.Abi do
     ABI.TypeDecoder.decode(formatted_data, fs)
   end
 
-  @doc "Reformats abi from list to map with event and function names as keys"
-  @spec reformat_abi(list()) :: map()
-  def reformat_abi(abi) do
-    abi
-    |> Enum.map(&map_abi/1)
-    |> Map.new()
-  end
-
   @doc "Loads the abi at the file path and reformats it to a map"
   @spec load_abi(binary()) :: list() | {:error, atom()}
   def load_abi(file_path) do
@@ -153,6 +145,12 @@ defmodule ExW3.Abi do
     else
       raise "#{name} method not found with the given abi"
     end
+  end
+
+  defp reformat_abi(abi) do
+    abi
+    |> Enum.map(&map_abi/1)
+    |> Map.new()
   end
 
   defp map_abi(x) do

@@ -27,10 +27,6 @@ defmodule ExW3Test do
     assert ExW3.block_number() |> is_integer
   end
 
-  test "loads abi", context do
-    assert context[:simple_storage_abi] |> is_map
-  end
-
   # Only works with ganache-cli
 
   # test "mines a block" do
