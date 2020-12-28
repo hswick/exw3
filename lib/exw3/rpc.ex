@@ -21,8 +21,9 @@ defmodule ExW3.Rpc do
 
   @doc "Returns the current block number"
   @spec block_number() :: {:ok, non_neg_integer} | {:error, ExW3.Utils.invalid_hex_string()}
-  def block_number do
-    case call_client(:eth_block_number) do
+  @spec block_number(opts) :: {:ok, non_neg_integer} | {:error, ExW3.Utils.invalid_hex_string()}
+  def block_number(opts \\ []) do
+    case call_client(:eth_block_number, [opts]) do
       {:ok, hex_block_number} ->
         {:ok, block_number} = ExW3.Utils.hex_to_integer(hex_block_number)
         block_number

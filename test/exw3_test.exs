@@ -19,10 +19,6 @@ defmodule ExW3Test do
     assert ExW3.balance(Enum.at(context[:accounts], 0)) |> is_integer
   end
 
-  test "gets block number" do
-    assert ExW3.block_number() |> is_integer
-  end
-
   # Only works with ganache-cli
 
   # test "mines a block" do
