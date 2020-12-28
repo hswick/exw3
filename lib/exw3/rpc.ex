@@ -3,7 +3,7 @@ defmodule ExW3.Rpc do
 
   @type invalid_hex_string_error :: ExW3.Utils.invalid_hex_string_error()
   @type request_error :: Ethereumex.Client.Behaviour.error()
-  @type opts :: keyword
+  @type opts :: {:url, String.t()}
   @type hex_block_number :: String.t()
   @type latest :: String.t()
   @type earliest :: String.t()
@@ -11,8 +11,9 @@ defmodule ExW3.Rpc do
 
   @doc "returns all available accounts"
   @spec accounts() :: list()
-  def accounts do
-    case call_client(:eth_accounts) do
+  @spec accounts([opts]) :: list()
+  def accounts(opts \\ []) do
+    case call_client(:eth_accounts, [opts]) do
       {:ok, accounts} -> accounts
       err -> err
     end
@@ -20,8 +21,9 @@ defmodule ExW3.Rpc do
 
   @doc "Returns the current block number"
   @spec block_number() :: {:ok, non_neg_integer} | {:error, ExW3.Utils.invalid_hex_string()}
-  def block_number do
-    case call_client(:eth_block_number) do
+  @spec block_number([opts]) :: {:ok, non_neg_integer} | {:error, ExW3.Utils.invalid_hex_string()}
+  def block_number(opts \\ []) do
+    case call_client(:eth_block_number, [opts]) do
       {:ok, hex_block_number} ->
         {:ok, block_number} = ExW3.Utils.hex_to_integer(hex_block_number)
         block_number
@@ -33,8 +35,9 @@ defmodule ExW3.Rpc do
 
   @doc "Returns current balance of account"
   @spec balance(binary()) :: integer() | {:error, any()}
-  def balance(account) do
-    case call_client(:eth_get_balance, [account]) do
+  @spec balance(binary(), [opts]) :: integer() | {:error, any()}
+  def balance(account, opts \\ []) do
+    case call_client(:eth_get_balance, [account, "latest", opts]) do
       {:ok, hex_balance} ->
         {:ok, balance} = ExW3.Utils.hex_to_integer(hex_balance)
         balance
@@ -97,7 +100,7 @@ defmodule ExW3.Rpc do
           optional(:blockhash) => String.t()
         }
 
-  @spec get_logs(log_filter, opts) :: {:ok, list} | {:error, term} | request_error
+  @spec get_logs(log_filter, [opts]) :: {:ok, list} | {:error, term} | request_error
   def get_logs(filter, opts \\ []) do
     with {:ok, _} = result <- call_client(:eth_get_logs, [filter, opts]) do
       result
