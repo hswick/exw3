@@ -11,8 +11,9 @@ defmodule ExW3.Rpc do
 
   @doc "returns all available accounts"
   @spec accounts() :: list()
-  def accounts do
-    case call_client(:eth_accounts) do
+  @spec accounts(opts) :: list()
+  def accounts(opts \\ []) do
+    case call_client(:eth_accounts, [opts]) do
       {:ok, accounts} -> accounts
       err -> err
     end

@@ -1,5 +1,5 @@
 defmodule ExW3 do
-  defdelegate accounts, to: ExW3.Rpc
+  defdelegate accounts(opts \\ []), to: ExW3.Rpc
   defdelegate block_number, to: ExW3.Rpc
   defdelegate balance(account), to: ExW3.Rpc
   defdelegate tx_receipt(tx_hash), to: ExW3.Rpc

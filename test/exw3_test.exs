@@ -15,10 +15,6 @@ defmodule ExW3Test do
     }
   end
 
-  test "gets accounts" do
-    assert ExW3.accounts() |> is_list
-  end
-
   test "gets balance", context do
     assert ExW3.balance(Enum.at(context[:accounts], 0)) |> is_integer
   end
