@@ -14,11 +14,12 @@ defmodule ExW3.RpcTest do
 
   describe ".block_number" do
     test "returns the integer block number from the eth_blockNumber JSON-RPC endpoint" do
-      assert ExW3.block_number() |> is_integer
+      assert {:ok, bn} = ExW3.block_number()
+      assert bn |> is_integer
     end
 
     test "can override the http endpoint" do
-      assert ExW3.block_number(url: Ethereumex.Config.rpc_url()) |> is_integer
+      assert {:ok, _} = ExW3.block_number(url: Ethereumex.Config.rpc_url())
       assert ExW3.block_number(url: "https://localhost:1234") == {:error, :econnrefused}
     end
   end

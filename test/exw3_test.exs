@@ -415,7 +415,8 @@ defmodule ExW3Test do
 
     ExW3.Contract.at(:EventTester, address)
 
-    {:ok, from_block} = ExW3.block_number() |> ExW3.Utils.integer_to_hex()
+    {:ok, current_block} = ExW3.block_number()
+    {:ok, from_block} = ExW3.Utils.integer_to_hex(current_block)
 
     {:ok, simple_tx_hash} =
       ExW3.Contract.send(:EventTester, :simple, ["Hello, World!"], %{
