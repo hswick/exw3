@@ -35,8 +35,9 @@ defmodule ExW3.Rpc do
 
   @doc "Returns current balance of account"
   @spec balance(binary()) :: integer() | {:error, any()}
-  def balance(account) do
-    case call_client(:eth_get_balance, [account]) do
+  @spec balance(binary(), opts) :: integer() | {:error, any()}
+  def balance(account, opts \\ []) do
+    case call_client(:eth_get_balance, [account, "latest", opts]) do
       {:ok, hex_balance} ->
         {:ok, balance} = ExW3.Utils.hex_to_integer(hex_balance)
         balance
