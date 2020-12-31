@@ -116,7 +116,7 @@ iex(11)> ExW3.Contract.call(:SimpleStorage, :get)
 
 If you are familiar with web3.js you may find the way ExW3 handles addresses unintuitive. ExW3's abi encoder interprets the address type as an uint160. If you are using an address as an option to a transaction like `:from` or `:to` this will work as expected. However, if one of your smart contracts is expecting an address type for an input parameter then you will need to do this:
 ```elixir
-a = ExW3.to_decimal("0x88838e84a401a1d6162290a1a765507c4a83f5e050658a83992a912f42149ca5")
+a = ExW3.Utils.hex_to_integer("0x88838e84a401a1d6162290a1a765507c4a83f5e050658a83992a912f42149ca5")
 ```
 
 ## Events
