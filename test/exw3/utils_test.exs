@@ -30,6 +30,7 @@ defmodule ExW3.UtilsTest do
 
     test "returns an error when the value is not an integer" do
       assert ExW3.Utils.integer_to_hex(1.1) == {:error, :non_integer}
+      assert ExW3.Utils.integer_to_hex(nil) == {:error, :non_integer}
     end
   end
 
