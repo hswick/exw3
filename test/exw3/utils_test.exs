@@ -19,8 +19,8 @@ defmodule ExW3.UtilsTest do
 
   describe ".integer_to_hex/1" do
     test "encodes an integer to hexadecimal" do
+      assert ExW3.Utils.integer_to_hex(0) == {:ok, "0x0"}
       assert ExW3.Utils.integer_to_hex(1) == {:ok, "0x1"}
-      assert ExW3.Utils.integer_to_hex(2) == {:ok, "0x2"}
       assert ExW3.Utils.integer_to_hex(42) == {:ok, "0x2A"}
     end
 
@@ -30,6 +30,7 @@ defmodule ExW3.UtilsTest do
 
     test "returns an error when the value is not an integer" do
       assert ExW3.Utils.integer_to_hex(1.1) == {:error, :non_integer}
+      assert ExW3.Utils.integer_to_hex(nil) == {:error, :non_integer}
     end
   end
 
