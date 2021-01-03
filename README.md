@@ -203,3 +203,7 @@ The full test suite requires a running blockchain. You can run your own or start
 $ docker-compose up
 $ mix test
 ```
+
+## License
+
+`exw3` is released under the [Apache 2.0 license](./LICENSE.md)
