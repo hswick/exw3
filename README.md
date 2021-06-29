@@ -11,7 +11,9 @@
 
 ```elixir
 def deps do
-  [{:exw3, "~> 0.5"}]
+  [
+    {:exw3, "~> 0.6"}
+  ]
 end
 ```
 ## Overview
