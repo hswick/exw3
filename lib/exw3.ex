@@ -17,6 +17,6 @@ defmodule ExW3 do
   defdelegate personal_sign(data, address, passphrase, opts \\ []), to: ExW3.Rpc
   defdelegate personal_ec_recover(data0, data1, opts \\ []), to: ExW3.Rpc
   defdelegate eth_sign(data0, data1, opts \\ []), to: ExW3.Rpc
-  defdelegate eth_call(arguments), to: ExW3.Rpc
+  defdelegate eth_call(params, opts \\ []), to: ExW3.Rpc
   defdelegate eth_send(arguments), to: ExW3.Rpc
 end
