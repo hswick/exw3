@@ -32,9 +32,8 @@ defmodule ExW3.Utils do
 
   @doc "Returns a 0x prepended 32 byte hash of the input string"
   @spec keccak256(String.t()) :: String.t()
-  def keccak256(string) do
-    {:ok, hash} = ExKeccak.hash_256(string)
-    "0x#{Base.encode16(hash, case: :lower)}"
+  def keccak256(str) do
+    "0x#{str |> ExKeccak.hash_256() |> Base.encode16(case: :lower)}"
   end
 
   @unit_map %{
@@ -91,7 +90,7 @@ defmodule ExW3.Utils do
   @spec to_checksum_address(String.t()) :: String.t()
   def to_checksum_address(address) do
     address = address |> String.downcase() |> String.replace(~r/^0x/, "")
-    {:ok, hash_bin} = ExKeccak.hash_256(address)
+    hash_bin = ExKeccak.hash_256(address)
 
     hash =
       hash_bin

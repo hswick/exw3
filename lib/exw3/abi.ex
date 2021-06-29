@@ -68,7 +68,7 @@ defmodule ExW3.Abi do
   @spec method_signature(map(), binary()) :: binary()
   def method_signature(abi, name) do
     if abi[name] do
-      {:ok, input_signature} = ExKeccak.hash_256("#{name}#{types_signature(abi, name)}")
+      input_signature = ExKeccak.hash_256("#{name}#{types_signature(abi, name)}")
 
       # Take first four bytes
       <<init::binary-size(4), _rest::binary>> = input_signature
@@ -129,7 +129,7 @@ defmodule ExW3.Abi do
     if abi[name]["inputs"] do
       input_types = Enum.map(abi[name]["inputs"], fn x -> x["type"] end)
       types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
-      {:ok, input_signature} = ExKeccak.hash_256("#{name}#{types_signature}")
+      input_signature = ExKeccak.hash_256("#{name}#{types_signature}")
 
       # Take first four bytes
       <<init::binary-size(4), _rest::binary>> = input_signature
