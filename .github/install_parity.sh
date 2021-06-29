@@ -1,7 +1,7 @@
 # Install Parity blockchain tests on Github action
 echo > passfile # just to be safe
 
-wget https://releases.parity.io/ethereum/v2.7.2/x86_64-unknown-linux-gnu/parity
+wget https://releases.parity.io/ethereum/v3.2.6/x86_64-unknown-linux-gnu/parity
 
 chmod 755 ./parity
 echo > passfile
