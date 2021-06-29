@@ -3,7 +3,7 @@ defmodule ExW3Test do
   doctest ExW3
 
   setup_all do
-    ExW3.Contract.start_link()
+    start_supervised!(ExW3.Contract)
 
     %{
       simple_storage_abi: ExW3.Abi.load_abi("test/examples/build/SimpleStorage.abi"),
