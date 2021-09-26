@@ -31,7 +31,7 @@ defmodule ExW3.Abi do
     end
   end
 
-  @doc "Loads the bin ar the file path"
+  @doc "Loads the bin at from the .json from the file path"
   @spec load_bin(binary()) :: binary()
   def load_bin(file_path) do
     with {:ok, cwd} <- File.cwd(),
