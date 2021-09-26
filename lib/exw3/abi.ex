@@ -21,7 +21,7 @@ defmodule ExW3.Abi do
     end
   end
 
-  @doc "Loads an abi map and reformats input / oututs into tuples for ABI to read"
+  @doc "Loads an abi from map and reformats input / oututs into tuples for ABI to read"
   def load_abi_map(map) do
     reformat_abi(map)
   end

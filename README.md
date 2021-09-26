@@ -114,6 +114,15 @@ iex(11)> ExW3.Contract.call(:SimpleStorage, :get)
 {:ok, 1}
 ```
 
+Loading Abi from Map (in case your use case stores abis in postgres or mongo as jsonb)
+```elixir
+iex(1)> cryptopunk_abi = cryptopunk_ecto_instance.abi # assuming this is a JSONB field parsed to a map already
+iex(2)> ExW3.Contract.load_abi_map(cryptopunk_abi)
+%{
+ ...
+}
+```
+
 ## Address Type
 
 If you are familiar with web3.js you may find the way ExW3 handles addresses unintuitive. ExW3's abi encoder interprets the address type as an uint160. If you are using an address as an option to a transaction like `:from` or `:to` this will work as expected. However, if one of your smart contracts is expecting an address type for an input parameter then you will need to do this:
