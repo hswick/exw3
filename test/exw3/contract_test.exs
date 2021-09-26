@@ -4,7 +4,6 @@ defmodule EXW3.ContractTest do
 
   @simple_storage_abi ExW3.Abi.load_abi("test/examples/build/SimpleStorage.abi")
   @mycollectible_abi ExW3.Abi.load_hardhat_abi("test/examples/build/MyCollectibleErc721.json")
-  @mycollectible_address "0x20b4a4FBC3Ed5E051703F1E012e5C74c1c9dE9eA"
 
   setup_all do
     start_supervised!(ExW3.Contract)
