@@ -1,6 +1,6 @@
 {
-  "name": "exw3",
-  "version": "1.0.0",
+  "name": "ex_w3",
+  "version": "0.6.1",
   "description": "Npm Project for testing Exw3",
   "main": "index.js",
   "directories": {
