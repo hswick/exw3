@@ -227,6 +227,6 @@ $ mix test
 
 `ex_w3` is released under the [Apache 2.0 license](./LICENSE.md)
 
-A Special Thank you to Harley Swick [@hswick](https://github.com/hswick) for creating the library this was forked from.
+A Special Thank you to Harley Swick [@hswick](https://github.com/hswick) for creating the library `exw3` this was forked from.
 
 Original Library [Exw3](https://github.com/hswick/exw3)
