@@ -22,7 +22,7 @@ defmodule ExW3.Abi do
   end
 
   @doc "Loads the hardhat abi at the file path and reformats it to a map"
-  @spec load_abi(binary()) :: list() | {:error, atom()}
+  @spec load_hardhat_abi(binary()) :: list() | {:error, atom()}
   def load_hardhat_abi(file_path) do
     with {:ok, cwd} <- File.cwd(),
          {:ok, abi} <- File.read(Path.join([cwd, file_path])) do
@@ -37,6 +37,17 @@ defmodule ExW3.Abi do
     with {:ok, cwd} <- File.cwd(),
          {:ok, bin} <- File.read(Path.join([cwd, file_path])) do
       bin
+    end
+  end
+
+  @doc "Loads the hardhat_bin ar the file path"
+  @spec load_hardhat_bin(binary()) :: binary()
+  def load_hardhat_bin(file_path) do
+    with {:ok, cwd} <- File.cwd(),
+         {:ok, bin} <- File.read(Path.join([cwd, file_path])) do
+        bin_map = Jason.decode!(bin)
+        "0x" <> bytecode = bin_map["bytecode"]
+        bytecode
     end
   end
 

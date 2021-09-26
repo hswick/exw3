@@ -59,9 +59,41 @@ defmodule EXW3.ContractTest do
     assert ExW3.Contract.address(:SimpleStorage) == address
   end
 
+  test ".deploy Mycollectible" do
+    ExW3.Contract.register(:MyCollectibleErc721, abi: @mycollectible_abi)
+    accounts = ExW3.accounts()
+
+    {:ok, address, _} =
+      ExW3.Contract.deploy(
+        :MyCollectibleErc721,
+        bin: ExW3.Abi.load_hardhat_bin("test/examples/build/MyCollectibleErc721.json"),
+        args: [],
+        options: %{
+          gas: 10_000_000,
+          from: Enum.at(accounts, 0)
+        }
+      )
+
+    assert ExW3.Contract.at(:MyCollectibleErc721, address) == :ok
+    assert ExW3.Contract.address(:MyCollectibleErc721) == address
+  end
+
   test ".call for string return type returns string" do
     ExW3.Contract.register(:MyCollectibleErc721, abi: @mycollectible_abi)
-    ExW3.Contract.at(:MyCollectibleErc721, @mycollectible_address)
+    accounts = ExW3.accounts()
+
+    {:ok, address, _} =
+      ExW3.Contract.deploy(
+        :MyCollectibleErc721,
+        bin: ExW3.Abi.load_hardhat_bin("test/examples/build/MyCollectibleErc721.json"),
+        args: [],
+        options: %{
+          gas: 10_000_000,
+          from: Enum.at(accounts, 0)
+        }
+      )
+
+    ExW3.Contract.at(:MyCollectibleErc721, address)
     response = ExW3.Contract.call(:MyCollectibleErc721, :symbol, [])
     IO.inspect(response)
     assert  {:ok, _} = response
