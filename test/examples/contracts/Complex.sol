@@ -1,4 +1,4 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.8.0;
 
 contract Complex {
 
@@ -46,6 +46,6 @@ contract Complex {
         barFoo = _barFoo;
     }
 
-    function() public payable { }
+    // function() public payable { }
 
 }

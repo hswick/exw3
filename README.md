@@ -195,6 +195,13 @@ To compile the test solidity contracts after making a change run this command:
 solc --abi --bin --overwrite -o test/examples/build test/examples/contracts/*.sol
 ```
 
+# Deploying Contracts with Hardhat
+
+To compile the test solidity contracts with the local ganache running at `localhost:8545` after making a change run this command:
+```
+npm run ganache
+```
+
 # Contributing
 
 ## Test

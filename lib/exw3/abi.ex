@@ -21,6 +21,16 @@ defmodule ExW3.Abi do
     end
   end
 
+  @doc "Loads the hardhat abi at the file path and reformats it to a map"
+  @spec load_abi(binary()) :: list() | {:error, atom()}
+  def load_hardhat_abi(file_path) do
+    with {:ok, cwd} <- File.cwd(),
+         {:ok, abi} <- File.read(Path.join([cwd, file_path])) do
+      abi_map = Jason.decode!(abi)
+      reformat_abi(abi_map["abi"])
+    end
+  end
+
   @doc "Loads the bin ar the file path"
   @spec load_bin(binary()) :: binary()
   def load_bin(file_path) do
@@ -42,16 +52,17 @@ defmodule ExW3.Abi do
   @spec decode_output(map(), binary(), binary()) :: list()
   def decode_output(abi, name, output) do
     {:ok, trim_output} =
-      String.slice(output, 2..String.length(output)) |> Base.decode16(case: :lower)
+      String.slice(output, 2..-1) |> Base.decode16(case: :lower)
+
 
     output_types = Enum.map(abi[name]["outputs"], fn x -> x["type"] end)
-    types_signature = Enum.join(["(", Enum.join(output_types, ","), ")"])
+    types_signature = if length(output_types) == 1 and List.first(output_types) == "string", do: List.first(output_types), else: Enum.join(["(", Enum.join(output_types, ","), ")"])
     output_signature = "#{name}(#{types_signature})"
 
     outputs =
       ABI.decode(output_signature, trim_output)
       |> List.first()
-      |> Tuple.to_list()
+      |> maybe_tuple_to_list()
 
     outputs
   end
@@ -145,6 +156,14 @@ defmodule ExW3.Abi do
     else
       raise "#{name} method not found with the given abi"
     end
+  end
+
+  defp maybe_tuple_to_list(maybe_tuple) when is_binary(maybe_tuple) do
+    [maybe_tuple]
+  end
+
+  defp maybe_tuple_to_list(tuple) when is_tuple(tuple) do
+    Tuple.to_list(tuple)
   end
 
   defp reformat_abi(abi) do

@@ -7,3 +7,5 @@ erl_crash.dump
 /doc
 passfile
 docker/openethereum
+/cache
+/node_modules
