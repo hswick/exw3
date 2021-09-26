@@ -202,9 +202,14 @@ solc --abi --bin --overwrite -o test/examples/build test/examples/contracts/*.so
 
 # Deploying Contracts with Hardhat
 
-To compile the test solidity contracts with the local ganache running at `localhost:8545` after making a change run this command:
+To compile the test solidity contracts after making a change run this command:
 ```
 npm run compile
+```
+
+To deploy the solidity contracts with a local running ganache on port `8545` running at `localhost:8545` without using `exw3` to deploy use this command
+```
+npm run ganache
 ```
 
 # Contributing
