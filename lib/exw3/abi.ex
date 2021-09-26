@@ -67,7 +67,7 @@ defmodule ExW3.Abi do
 
 
     output_types = Enum.map(abi[name]["outputs"], fn x -> x["type"] end)
-    types_signature = if length(output_types) == 1 and List.first(output_types) == "string", do: List.first(output_types), else: Enum.join(["(", Enum.join(output_types, ","), ")"])
+    types_signature = format_output_type_signatures(output_types)
     output_signature = "#{name}(#{types_signature})"
 
     outputs =
@@ -166,6 +166,14 @@ defmodule ExW3.Abi do
       encoded_input |> Base.encode16(case: :lower)
     else
       raise "#{name} method not found with the given abi"
+    end
+  end
+
+  defp format_output_type_signatures(output_types) do
+    if length(output_types) == 1 and List.first(output_types) == "string" do
+      List.first(output_types)
+    else
+      Enum.join(["(", Enum.join(output_types, ","), ")"])
     end
   end
 
