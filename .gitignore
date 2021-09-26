@@ -9,3 +9,4 @@ passfile
 docker/openethereum
 /cache
 /node_modules
+/artifacts

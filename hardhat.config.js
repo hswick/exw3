@@ -16,6 +16,6 @@ module.exports = {
   paths: {
     sources: "./test/examples/contracts",
     cache: "./cache",
-    artifacts: "./test/examples/build"
+    artifacts: "./artifacts"
   },
 };
