@@ -21,6 +21,11 @@ defmodule ExW3.Abi do
     end
   end
 
+  @doc "Loads an abi map and reformats input / oututs into tuples for ABI to read"
+  def load_abi_map(map) do
+    reformat_abi(map)
+  end
+
   @doc "Loads the hardhat abi at the file path and reformats it to a map"
   @spec load_hardhat_abi(binary()) :: list() | {:error, atom()}
   def load_hardhat_abi(file_path) do
