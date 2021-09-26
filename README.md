@@ -1,7 +1,7 @@
-# ExW3
+# Ex_W3
 
 [![Build Status](https://github.com/hswick/exw3/workflows/test/badge.svg?branch=master)](https://github.com/hswick/exw3/actions?query=workflow%3Atest)
-[![hex.pm version](https://img.shields.io/hexpm/v/exw3.svg?style=flat)](https://hex.pm/packages/exw3)
+[![hex.pm version](https://img.shields.io/hexpm/v/ex_w3.svg?style=flat)](https://hex.pm/packages/ex_w3)
 
 <p align="center">
   <img src="./exw3_logo.jpg"/>
@@ -12,7 +12,7 @@
 ```elixir
 def deps do
   [
-    {:exw3, "~> 0.6"}
+    {:ex_w3, "~> 0.6.1"}
   ]
 end
 ```
@@ -225,4 +225,8 @@ $ mix test
 
 ## License
 
-`exw3` is released under the [Apache 2.0 license](./LICENSE.md)
+`ex_w3` is released under the [Apache 2.0 license](./LICENSE.md)
+
+A Special Thank you to Harley Swick [@hswick](https://github.com/hswick) for creating the library this was forked from.
+
+Original Library [Exw3](https://github.com/hswick/exw3)
