@@ -25,10 +25,11 @@ use Mix.Config
 #
 #     import_config "#{Mix.env}.exs"
 config :ethereumex,
-  client_type: :ipc,
-  url: "http://localhost:8545",
-  ipc_path:
-    System.get_env(
-      "IPC_PATH",
-      "#{System.user_home!()}/.local/share/io.parity.ethereum/jsonrpc.ipc"
-    )
+  client_type: :http,
+  url: "http://localhost:8545"
+
+# ipc_path:
+#   System.get_env(
+#     "IPC_PATH",
+#     "#{System.user_home!()}/.local/share/io.parity.ethereum/jsonrpc.ipc"
+#   )

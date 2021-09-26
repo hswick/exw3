@@ -1,7 +1,7 @@
-# ExW3
+# Ex_W3
 
 [![Build Status](https://github.com/hswick/exw3/workflows/test/badge.svg?branch=master)](https://github.com/hswick/exw3/actions?query=workflow%3Atest)
-[![hex.pm version](https://img.shields.io/hexpm/v/exw3.svg?style=flat)](https://hex.pm/packages/exw3)
+[![hex.pm version](https://img.shields.io/hexpm/v/ex_w3.svg?style=flat)](https://hex.pm/packages/ex_w3)
 
 <p align="center">
   <img src="./exw3_logo.jpg"/>
@@ -12,7 +12,7 @@
 ```elixir
 def deps do
   [
-    {:exw3, "~> 0.6"}
+    {:ex_w3, "~> 0.6.1"}
   ]
 end
 ```
@@ -195,6 +195,23 @@ To compile the test solidity contracts after making a change run this command:
 solc --abi --bin --overwrite -o test/examples/build test/examples/contracts/*.sol
 ```
 
+# Install Ganache
+
+- [Ganache Desktop](https://github.com/trufflesuite/ganache)
+- Change port to `8545` in Settings > Server.
+
+# Deploying Contracts with Hardhat
+
+To compile the test solidity contracts after making a change run this command:
+```
+npm run compile
+```
+
+To deploy the solidity contracts with a local running ganache on port `8545` running at `localhost:8545` without using `exw3` to deploy use this command
+```
+npm run ganache
+```
+
 # Contributing
 
 ## Test
@@ -208,4 +225,8 @@ $ mix test
 
 ## License
 
-`exw3` is released under the [Apache 2.0 license](./LICENSE.md)
+`ex_w3` is released under the [Apache 2.0 license](./LICENSE.md)
+
+A Special Thank you to Harley Swick [@hswick](https://github.com/hswick) for creating the library `exw3` this was forked from.
+
+Original Library [Exw3](https://github.com/hswick/exw3)

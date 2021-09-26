@@ -9,7 +9,7 @@ defmodule ExW3.ClientTest do
   test ".call_client/2 calls the JSON-RPC method with the given arguments" do
     assert {:ok, accounts} = ExW3.Client.call_client(:eth_accounts)
     assert Enum.count(accounts) > 0
-    assert ["0x" <> _ = account] = accounts
+    assert ["0x" <> _ = account | _] = accounts
 
     assert {:ok, balance} = ExW3.Client.call_client(:eth_get_balance, [account])
     assert "0x" <> _ = balance

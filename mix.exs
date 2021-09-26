@@ -3,16 +3,16 @@ defmodule ExW3.MixProject do
 
   def project do
     [
-      app: :exw3,
-      version: "0.6.0",
+      app: :ex_w3,
+      version: "0.6.1",
       elixir: "~> 1.10",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
       package: package(),
-      name: "exw3",
-      source_url: "https://github.com/hswick/exw3",
+      name: "ex_w3",
+      source_url: "https://github.com/Metalink-App/ex_w3",
       dialyzer: [
         remove_defaults: [:unknown]
       ]
@@ -42,9 +42,9 @@ defmodule ExW3.MixProject do
     [
       name: "exw3",
       files: ["lib", "mix.exs", "README*"],
-      maintainers: ["Harley Swick"],
+      maintainers: ["William Leong"],
       licenses: ["Apache 2.0"],
-      links: %{"GitHub" => "https://github.com/hswick/exw3"}
+      links: %{"GitHub" => "https://github.com/Metalink-App/exw3"}
     ]
   end
 end
