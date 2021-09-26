@@ -45,9 +45,9 @@ defmodule ExW3.Abi do
   def load_hardhat_bin(file_path) do
     with {:ok, cwd} <- File.cwd(),
          {:ok, bin} <- File.read(Path.join([cwd, file_path])) do
-        bin_map = Jason.decode!(bin)
-        "0x" <> bytecode = bin_map["bytecode"]
-        bytecode
+      bin_map = Jason.decode!(bin)
+      "0x" <> bytecode = bin_map["bytecode"]
+      bytecode
     end
   end
 
@@ -62,9 +62,7 @@ defmodule ExW3.Abi do
   @doc "Decodes output based on specified functions return signature"
   @spec decode_output(map(), binary(), binary()) :: list()
   def decode_output(abi, name, output) do
-    {:ok, trim_output} =
-      String.slice(output, 2..-1) |> Base.decode16(case: :lower)
-
+    {:ok, trim_output} = String.slice(output, 2..-1) |> Base.decode16(case: :lower)
 
     output_types = Enum.map(abi[name]["outputs"], fn x -> x["type"] end)
     types_signature = format_output_type_signatures(output_types)

@@ -68,7 +68,7 @@ defmodule EXW3.ContractTest do
         bin: ExW3.Abi.load_hardhat_bin("test/examples/build/MyCollectibleErc721.json"),
         args: [],
         options: %{
-          gas: 10_000_000,
+          gas: 8_000_000,
           from: Enum.at(accounts, 0)
         }
       )
@@ -87,7 +87,7 @@ defmodule EXW3.ContractTest do
         bin: ExW3.Abi.load_hardhat_bin("test/examples/build/MyCollectibleErc721.json"),
         args: [],
         options: %{
-          gas: 10_000_000,
+          gas: 8_000_000,
           from: Enum.at(accounts, 0)
         }
       )
@@ -95,6 +95,6 @@ defmodule EXW3.ContractTest do
     ExW3.Contract.at(:MyCollectibleErc721, address)
     response = ExW3.Contract.call(:MyCollectibleErc721, :symbol, [])
     IO.inspect(response)
-    assert  {:ok, _} = response
+    assert {:ok, _} = response
   end
 end
