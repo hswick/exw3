@@ -1,6 +1,6 @@
 # Ex_W3
 
-[![Build Status](https://github.com/hswick/exw3/workflows/test/badge.svg?branch=master)](https://github.com/hswick/exw3/actions?query=workflow%3Atest)
+[![Build Status](https://github.com/Metalink-App/ex_w3/workflows/test/badge.svg?branch=master)](https://github.com/Metalink-App/ex_w3/actions?query=workflow%3Atest)
 [![hex.pm version](https://img.shields.io/hexpm/v/ex_w3.svg?style=flat)](https://hex.pm/packages/ex_w3)
 
 <p align="center">
