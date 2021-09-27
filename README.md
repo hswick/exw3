@@ -1,4 +1,4 @@
-# Ex_W3
+# ExW3
 
 [![Build Status](https://github.com/Metalink-App/ex_w3/workflows/test/badge.svg?branch=master)](https://github.com/Metalink-App/ex_w3/actions?query=workflow%3Atest)
 [![hex.pm version](https://img.shields.io/hexpm/v/ex_w3.svg?style=flat)](https://hex.pm/packages/ex_w3)
@@ -63,9 +63,9 @@ Provide an absolute path to the ipc socket provided by whatever Ethereum client 
 
 * NOTE : Use of Ipc is recommended, as it is more secure and significantly faster.
 
-Currently, ExW3 supports a handful of json rpc commands. Primarily the ones that get used the most. If ExW3 doesn't provide a specific command, you can always use the [Ethereumex](https://github.com/exthereum/ethereumex) commands.
+Currently, Ex_W3 supports a handful of json rpc commands. Primarily the ones that get used the most. If Ex_W3 doesn't provide a specific command, you can always use the [Ethereumex](https://github.com/exthereum/ethereumex) commands.
 
-Check out the [documentation](https://hexdocs.pm/exw3/ExW3.html) for more details of the API.
+Check out the [documentation](https://hexdocs.pm/ex_w3/ExW3.html) for more details of the API.
 
 ### Example
 
