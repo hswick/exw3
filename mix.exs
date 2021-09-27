@@ -12,7 +12,7 @@ defmodule ExW3.MixProject do
       description: description(),
       package: package(),
       name: "ex_w3",
-      source_url: "https://github.com/Metalink-App/exw3",
+      source_url: "https://github.com/Metalink-App/ex_w3",
       dialyzer: [
         remove_defaults: [:unknown]
       ]
@@ -44,7 +44,7 @@ defmodule ExW3.MixProject do
       files: ["lib", "mix.exs", "README*"],
       maintainers: ["William Leong"],
       licenses: ["Apache 2.0"],
-      links: %{"GitHub" => "https://github.com/Metalink-App/exw3"}
+      links: %{"GitHub" => "https://github.com/Metalink-App/ex_w3"}
     ]
   end
 end
