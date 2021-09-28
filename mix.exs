@@ -1,18 +1,18 @@
-defmodule ExW3.MixProject do
+defmodule Web3x.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :ex_w3,
-      version: "0.6.1",
+      app: :web3x,
+      version: "0.6.2",
       elixir: "~> 1.10",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
       package: package(),
-      name: "ex_w3",
-      source_url: "https://github.com/Metalink-App/ex_w3",
+      name: "web3x",
+      source_url: "https://github.com/Metalink-App/web3x",
       dialyzer: [
         remove_defaults: [:unknown]
       ]
@@ -35,16 +35,16 @@ defmodule ExW3.MixProject do
   end
 
   defp description do
-    "A high level Ethereum JSON RPC Client for Elixir"
+    "(Another) high level Ethereum JSON RPC Client for Elixir"
   end
 
   defp package do
     [
-      name: "ex_w3",
+      name: "web3x",
       files: ["lib", "mix.exs", "README*"],
       maintainers: ["William Leong"],
       licenses: ["Apache 2.0"],
-      links: %{"GitHub" => "https://github.com/Metalink-App/ex_w3"}
+      links: %{"GitHub" => "https://github.com/Metalink-App/web3x"}
     ]
   end
 end

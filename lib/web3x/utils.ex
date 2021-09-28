@@ -1,4 +1,4 @@
-defmodule ExW3.Utils do
+defmodule Web3x.Utils do
   @type invalid_hex_string :: :invalid_hex_string
   @type negative_integer :: :negative_integer
   @type non_integer :: :non_integer
@@ -118,7 +118,7 @@ defmodule ExW3.Utils do
   @doc "Checks if the address is a valid checksummed address"
   @spec is_valid_checksum_address(String.t()) :: boolean
   def is_valid_checksum_address(address) do
-    ExW3.Utils.to_checksum_address(address) == address
+    Web3x.Utils.to_checksum_address(address) == address
   end
 
   @doc "converts Ethereum style bytes to string"

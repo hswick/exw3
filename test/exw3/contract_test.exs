@@ -1,26 +1,26 @@
 defmodule EXW3.ContractTest do
   use ExUnit.Case
-  doctest ExW3.Contract
+  doctest Web3x.Contract
 
-  @simple_storage_abi ExW3.Abi.load_abi("test/examples/build/SimpleStorage.abi")
-  @mycollectible_abi ExW3.Abi.load_hardhat_abi("test/examples/build/MyCollectibleErc721.json")
+  @simple_storage_abi Web3x.Abi.load_abi("test/examples/build/SimpleStorage.abi")
+  @mycollectible_abi Web3x.Abi.load_hardhat_abi("test/examples/build/MyCollectibleErc721.json")
 
   setup_all do
-    start_supervised!(ExW3.Contract)
+    start_supervised!(Web3x.Contract)
     :ok
   end
 
   test ".at assigns the address to the state of the registered contract" do
-    ExW3.Contract.register(:SimpleStorage, abi: @simple_storage_abi)
+    Web3x.Contract.register(:SimpleStorage, abi: @simple_storage_abi)
 
-    assert ExW3.Contract.address(:SimpleStorage) == nil
+    assert Web3x.Contract.address(:SimpleStorage) == nil
 
-    accounts = ExW3.accounts()
+    accounts = Web3x.accounts()
 
     {:ok, address, _} =
-      ExW3.Contract.deploy(
+      Web3x.Contract.deploy(
         :SimpleStorage,
-        bin: ExW3.Abi.load_bin("test/examples/build/SimpleStorage.bin"),
+        bin: Web3x.Abi.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
           gas: 300_000,
@@ -28,7 +28,7 @@ defmodule EXW3.ContractTest do
         }
       )
 
-    assert ExW3.Contract.at(:SimpleStorage, address) == :ok
+    assert Web3x.Contract.at(:SimpleStorage, address) == :ok
 
     state = :sys.get_state(ContractManager)
     contract_state = state[:SimpleStorage]
@@ -37,16 +37,16 @@ defmodule EXW3.ContractTest do
   end
 
   test ".address returns the registered address for the contract" do
-    ExW3.Contract.register(:SimpleStorage, abi: @simple_storage_abi)
+    Web3x.Contract.register(:SimpleStorage, abi: @simple_storage_abi)
 
-    assert ExW3.Contract.address(:SimpleStorage) == nil
+    assert Web3x.Contract.address(:SimpleStorage) == nil
 
-    accounts = ExW3.accounts()
+    accounts = Web3x.accounts()
 
     {:ok, address, _} =
-      ExW3.Contract.deploy(
+      Web3x.Contract.deploy(
         :SimpleStorage,
-        bin: ExW3.Abi.load_bin("test/examples/build/SimpleStorage.bin"),
+        bin: Web3x.Abi.load_bin("test/examples/build/SimpleStorage.bin"),
         args: [],
         options: %{
           gas: 300_000,
@@ -54,18 +54,18 @@ defmodule EXW3.ContractTest do
         }
       )
 
-    assert ExW3.Contract.at(:SimpleStorage, address) == :ok
-    assert ExW3.Contract.address(:SimpleStorage) == address
+    assert Web3x.Contract.at(:SimpleStorage, address) == :ok
+    assert Web3x.Contract.address(:SimpleStorage) == address
   end
 
   test ".deploy Mycollectible" do
-    ExW3.Contract.register(:MyCollectibleErc721, abi: @mycollectible_abi)
-    accounts = ExW3.accounts()
+    Web3x.Contract.register(:MyCollectibleErc721, abi: @mycollectible_abi)
+    accounts = Web3x.accounts()
 
     {:ok, address, _} =
-      ExW3.Contract.deploy(
+      Web3x.Contract.deploy(
         :MyCollectibleErc721,
-        bin: ExW3.Abi.load_hardhat_bin("test/examples/build/MyCollectibleErc721.json"),
+        bin: Web3x.Abi.load_hardhat_bin("test/examples/build/MyCollectibleErc721.json"),
         args: [],
         options: %{
           gas: 8_000_000,
@@ -73,18 +73,18 @@ defmodule EXW3.ContractTest do
         }
       )
 
-    assert ExW3.Contract.at(:MyCollectibleErc721, address) == :ok
-    assert ExW3.Contract.address(:MyCollectibleErc721) == address
+    assert Web3x.Contract.at(:MyCollectibleErc721, address) == :ok
+    assert Web3x.Contract.address(:MyCollectibleErc721) == address
   end
 
   test ".call for string return type returns string" do
-    ExW3.Contract.register(:MyCollectibleErc721, abi: @mycollectible_abi)
-    accounts = ExW3.accounts()
+    Web3x.Contract.register(:MyCollectibleErc721, abi: @mycollectible_abi)
+    accounts = Web3x.accounts()
 
     {:ok, address, _} =
-      ExW3.Contract.deploy(
+      Web3x.Contract.deploy(
         :MyCollectibleErc721,
-        bin: ExW3.Abi.load_hardhat_bin("test/examples/build/MyCollectibleErc721.json"),
+        bin: Web3x.Abi.load_hardhat_bin("test/examples/build/MyCollectibleErc721.json"),
         args: [],
         options: %{
           gas: 8_000_000,
@@ -92,8 +92,8 @@ defmodule EXW3.ContractTest do
         }
       )
 
-    ExW3.Contract.at(:MyCollectibleErc721, address)
-    response = ExW3.Contract.call(:MyCollectibleErc721, :symbol, [])
+    Web3x.Contract.at(:MyCollectibleErc721, address)
+    response = Web3x.Contract.call(:MyCollectibleErc721, :symbol, [])
     IO.inspect(response)
     assert {:ok, _} = response
   end

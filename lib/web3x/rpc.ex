@@ -1,7 +1,7 @@
-defmodule ExW3.Rpc do
-  import ExW3.Client
+defmodule Web3x.Rpc do
+  import Web3x.Client
 
-  @type invalid_hex_string_error :: ExW3.Utils.invalid_hex_string_error()
+  @type invalid_hex_string_error :: Web3x.Utils.invalid_hex_string_error()
   @type request_error :: Ethereumex.Client.Behaviour.error()
   @type opts :: {:url, String.t()}
   @type hex_block_number :: String.t()
@@ -20,11 +20,11 @@ defmodule ExW3.Rpc do
   end
 
   @doc "Returns the current block number"
-  @spec block_number() :: {:ok, non_neg_integer} | {:error, ExW3.Utils.invalid_hex_string()}
-  @spec block_number([opts]) :: {:ok, non_neg_integer} | {:error, ExW3.Utils.invalid_hex_string()}
+  @spec block_number() :: {:ok, non_neg_integer} | {:error, Web3x.Utils.invalid_hex_string()}
+  @spec block_number([opts]) :: {:ok, non_neg_integer} | {:error, Web3x.Utils.invalid_hex_string()}
   def block_number(opts \\ []) do
     case call_client(:eth_block_number, [opts]) do
-      {:ok, hex_block_number} -> ExW3.Utils.hex_to_integer(hex_block_number)
+      {:ok, hex_block_number} -> Web3x.Utils.hex_to_integer(hex_block_number)
       err -> err
     end
   end
@@ -35,7 +35,7 @@ defmodule ExW3.Rpc do
   def balance(account, opts \\ []) do
     case call_client(:eth_get_balance, [account, "latest", opts]) do
       {:ok, hex_balance} ->
-        {:ok, balance} = ExW3.Utils.hex_to_integer(hex_balance)
+        {:ok, balance} = Web3x.Utils.hex_to_integer(hex_balance)
         balance
 
       err ->
@@ -52,7 +52,7 @@ defmodule ExW3.Rpc do
 
       {:ok, receipt} ->
         normalized_receipt =
-          ExW3.Normalize.transform_to_integer(receipt, ~w(blockNumber cumulativeGasUsed gasUsed))
+          Web3x.Normalize.transform_to_integer(receipt, ~w(blockNumber cumulativeGasUsed gasUsed))
 
         {:ok, Map.merge(receipt, normalized_receipt)}
 
@@ -70,7 +70,7 @@ defmodule ExW3.Rpc do
     end
   end
 
-  @doc "Creates a new filter, returns filter id. For more sophisticated use, prefer ExW3.Contract.filter."
+  @doc "Creates a new filter, returns filter id. For more sophisticated use, prefer Web3x.Contract.filter."
   @spec new_filter(map()) :: binary() | {:error, any()}
   def new_filter(map) do
     case call_client(:eth_new_filter, [map]) do
@@ -79,7 +79,7 @@ defmodule ExW3.Rpc do
     end
   end
 
-  @doc "Gets event changes (logs) by filter. Unlike ExW3.Contract.get_filter_changes it does not return the data in a formatted way"
+  @doc "Gets event changes (logs) by filter. Unlike Web3x.Contract.get_filter_changes it does not return the data in a formatted way"
   @spec get_filter_changes(binary()) :: any()
   def get_filter_changes(filter_id) do
     case call_client(:eth_get_filter_changes, [filter_id]) do
@@ -136,7 +136,7 @@ defmodule ExW3.Rpc do
 
   @doc "Using the personal api, this method unlocks account using the passphrase provided, and returns a boolean."
   @spec personal_unlock_account(binary(), list()) :: {:ok, boolean()} | {:error, any()}
-  ### E.g. ExW3.personal_unlock_account(["0x1234","Password",30], [])
+  ### E.g. Web3x.personal_unlock_account(["0x1234","Password",30], [])
   def personal_unlock_account(params, opts \\ []) do
     call_client(:request, ["personal_unlockAccount", params, opts])
   end
@@ -171,13 +171,13 @@ defmodule ExW3.Rpc do
     call_client(:request, ["eth_sign", [data0, data1], opts])
   end
 
-  @doc "Simple eth_call to client. Recommended to use ExW3.Contract.call instead."
+  @doc "Simple eth_call to client. Recommended to use Web3x.Contract.call instead."
   @spec eth_call(list()) :: any()
   def eth_call(arguments) do
     call_client(:eth_call, arguments)
   end
 
-  @doc "Simple eth_send_transaction. Recommended to use ExW3.Contract.send instead."
+  @doc "Simple eth_send_transaction. Recommended to use Web3x.Contract.send instead."
   @spec eth_send(list()) :: any()
   def eth_send(arguments) do
     call_client(:eth_send_transaction, arguments)

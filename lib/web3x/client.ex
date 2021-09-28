@@ -1,4 +1,4 @@
-defmodule ExW3.Client do
+defmodule Web3x.Client do
   @type argument :: term
   @type request_error :: Ethereumex.Client.Behaviour.error()
   @type error :: {:error, :invalid_client_type} | request_error

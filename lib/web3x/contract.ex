@@ -1,4 +1,4 @@
-defmodule ExW3.Contract do
+defmodule Web3x.Contract do
   use GenServer
 
   @doc "Begins the Contract process to manage all interactions with smart contracts"
@@ -102,7 +102,7 @@ defmodule ExW3.Contract do
       Enum.map(events, fn {name, v} ->
         types = Enum.map(v["inputs"], &Map.get(&1, "type"))
         signature = Enum.join([name, "(", Enum.join(types, ","), ")"])
-        encoded_event_signature = ExW3.Utils.keccak256(signature)
+        encoded_event_signature = Web3x.Utils.keccak256(signature)
 
         indexed_fields =
           Enum.filter(v["inputs"], fn input ->
@@ -175,7 +175,7 @@ defmodule ExW3.Contract do
           end
 
           bin <>
-            (ExW3.Abi.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
+            (Web3x.Abi.encode_data(types_signature, arguments) |> Base.encode16(case: :lower))
         else
           # IO.warn("Could not find a constructor")
           bin
@@ -184,8 +184,8 @@ defmodule ExW3.Contract do
         bin
       end
 
-    gas = ExW3.Abi.encode_option(args[:options][:gas])
-    gasPrice = ExW3.Abi.encode_option(args[:options][:gas_price])
+    gas = Web3x.Abi.encode_option(args[:options][:gas])
+    gasPrice = Web3x.Abi.encode_option(args[:options][:gas_price])
 
     tx = %{
       from: args[:options][:from],
@@ -194,24 +194,24 @@ defmodule ExW3.Contract do
       gasPrice: gasPrice
     }
 
-    {:ok, tx_hash} = ExW3.Rpc.eth_send([tx])
-    {:ok, tx_receipt} = ExW3.Rpc.tx_receipt(tx_hash)
+    {:ok, tx_hash} = Web3x.Rpc.eth_send([tx])
+    {:ok, tx_receipt} = Web3x.Rpc.tx_receipt(tx_hash)
 
     {tx_receipt["contractAddress"], tx_hash}
   end
 
   def eth_call_helper(address, abi, method_name, args) do
     result =
-      ExW3.Rpc.eth_call([
+      Web3x.Rpc.eth_call([
         %{
           to: address,
-          data: "0x#{ExW3.Abi.encode_method_call(abi, method_name, args)}"
+          data: "0x#{Web3x.Abi.encode_method_call(abi, method_name, args)}"
         }
       ])
 
     case result do
       {:ok, data} ->
-        ([:ok] ++ ExW3.Abi.decode_output(abi, method_name, data)) |> List.to_tuple()
+        ([:ok] ++ Web3x.Abi.decode_output(abi, method_name, data)) |> List.to_tuple()
 
       {:error, err} ->
         {:error, err}
@@ -220,19 +220,19 @@ defmodule ExW3.Contract do
 
   def eth_send_helper(address, abi, method_name, args, options) do
     encoded_options =
-      ExW3.Abi.encode_options(
+      Web3x.Abi.encode_options(
         options,
         [:gas, :gasPrice, :value, :nonce]
       )
 
-    gas = ExW3.Abi.encode_option(args[:options][:gas])
-    gasPrice = ExW3.Abi.encode_option(args[:options][:gas_price])
+    gas = Web3x.Abi.encode_option(args[:options][:gas])
+    gasPrice = Web3x.Abi.encode_option(args[:options][:gas_price])
 
-    ExW3.Rpc.eth_send([
+    Web3x.Rpc.eth_send([
       Map.merge(
         %{
           to: address,
-          data: "0x#{ExW3.Abi.encode_method_call(abi, method_name, args)}",
+          data: "0x#{Web3x.Abi.encode_method_call(abi, method_name, args)}",
           gas: gas,
           gasPrice: gasPrice
         },
@@ -271,7 +271,7 @@ defmodule ExW3.Contract do
   end
 
   def handle_cast({:uninstall_filter, filter_id}, state) do
-    ExW3.uninstall_filter(filter_id)
+    Web3x.uninstall_filter(filter_id)
     {:noreply, Map.put(state, :filters, Map.delete(state[:filters], filter_id))}
   end
 
@@ -297,11 +297,11 @@ defmodule ExW3.Contract do
               topic_type = Enum.at(topic_types, i)
 
               Enum.map(topic, fn t ->
-                "0x" <> (ExW3.Abi.encode_data(topic_type, [t]) |> Base.encode16(case: :lower))
+                "0x" <> (Web3x.Abi.encode_data(topic_type, [t]) |> Base.encode16(case: :lower))
               end)
             else
               topic_type = Enum.at(topic_types, i)
-              "0x" <> (ExW3.Abi.encode_data(topic_type, [topic]) |> Base.encode16(case: :lower))
+              "0x" <> (Web3x.Abi.encode_data(topic_type, [topic]) |> Base.encode16(case: :lower))
             end
           else
             topic
@@ -320,7 +320,7 @@ defmodule ExW3.Contract do
         if Enum.member?(["latest", "earliest", "pending"], event_data[:fromBlock]) do
           event_data[:fromBlock]
         else
-          ExW3.Abi.encode_data("(uint256)", [event_data[:fromBlock]])
+          Web3x.Abi.encode_data("(uint256)", [event_data[:fromBlock]])
         end
 
       Map.put(event_data, :fromBlock, new_from_block)
@@ -336,7 +336,7 @@ defmodule ExW3.Contract do
           event_data[key]
         else
           "0x" <>
-            (ExW3.Abi.encode_data("(uint256)", [event_data[key]])
+            (Web3x.Abi.encode_data("(uint256)", [event_data[key]])
              |> Base.encode16(case: :lower))
         end
 
@@ -359,7 +359,7 @@ defmodule ExW3.Contract do
   end
 
   defp extract_non_indexed_fields(data, names, signature) do
-    Enum.zip(names, ExW3.Abi.decode_event(data, signature)) |> Enum.into(%{})
+    Enum.zip(names, Web3x.Abi.decode_event(data, signature)) |> Enum.into(%{})
   end
 
   defp format_log_data(log, event_attributes) do
@@ -379,7 +379,7 @@ defmodule ExW3.Contract do
             topic_type = Enum.at(event_attributes[:topic_types], i)
             topic_data = Enum.at(tail, i)
 
-            {decoded} = ExW3.Abi.decode_data(topic_type, topic_data)
+            {decoded} = Web3x.Abi.decode_data(topic_type, topic_data)
 
             decoded
           end)
@@ -409,7 +409,7 @@ defmodule ExW3.Contract do
         event_data_format_helper(event_data)
       )
 
-    filter_id = ExW3.Rpc.new_filter(payload)
+    filter_id = Web3x.Rpc.new_filter(payload)
 
     {:reply, {:ok, filter_id},
      Map.put(
@@ -428,7 +428,7 @@ defmodule ExW3.Contract do
     event_attributes =
       get_event_attributes(state, filter_info[:contract_name], filter_info[:event_name])
 
-    logs = ExW3.Rpc.get_filter_changes(filter_id)
+    logs = Web3x.Rpc.get_filter_changes(filter_id)
 
     formatted_logs =
       if logs != [] do
@@ -436,7 +436,7 @@ defmodule ExW3.Contract do
           formatted_log =
             Enum.reduce(
               [
-                ExW3.Normalize.transform_to_integer(log, [
+                Web3x.Normalize.transform_to_integer(log, [
                   "blockNumber",
                   "logIndex",
                   "transactionIndex"
@@ -508,7 +508,7 @@ defmodule ExW3.Contract do
   def handle_call({:tx_receipt, {contract_name, tx_hash}}, _from, state) do
     contract_info = state[contract_name]
 
-    {:ok, receipt} = ExW3.tx_receipt(tx_hash)
+    {:ok, receipt} = Web3x.tx_receipt(tx_hash)
 
     events = contract_info[:events]
     logs = receipt["logs"]
@@ -522,7 +522,7 @@ defmodule ExW3.Contract do
           non_indexed_fields =
             Enum.zip(
               event_attributes[:non_indexed_names],
-              ExW3.Abi.decode_event(log["data"], event_attributes[:signature])
+              Web3x.Abi.decode_event(log["data"], event_attributes[:signature])
             )
             |> Enum.into(%{})
 
@@ -534,7 +534,7 @@ defmodule ExW3.Contract do
                 topic_type = Enum.at(event_attributes[:topic_types], i)
                 topic_data = Enum.at(tail, i)
 
-                {decoded} = ExW3.Abi.decode_data(topic_type, topic_data)
+                {decoded} = Web3x.Abi.decode_data(topic_type, topic_data)
 
                 decoded
               end)

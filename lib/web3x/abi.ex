@@ -1,4 +1,4 @@
-defmodule ExW3.Abi do
+defmodule Web3x.Abi do
   @doc "Decodes event based on given data and provided signature"
   @spec decode_event(binary(), binary()) :: any()
   def decode_event(data, signature) do

@@ -1,8 +1,8 @@
-defmodule ExW3.AbiTest do
+defmodule Web3x.AbiTest do
   use ExUnit.Case
 
   test ".load_abi/1 returns a map keyed by function & event name" do
-    assert ExW3.Abi.load_abi("test/examples/build/SimpleStorage.abi") == %{
+    assert Web3x.Abi.load_abi("test/examples/build/SimpleStorage.abi") == %{
              "get" => %{
                "constant" => true,
                "inputs" => [],

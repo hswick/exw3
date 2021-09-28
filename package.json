@@ -1,7 +1,7 @@
 {
-  "name": "ex_w3",
-  "version": "0.6.1",
-  "description": "Npm Project for testing Exw3",
+  "name": "web3x",
+  "version": "0.6.2",
+  "description": "Npm Project for testing Web3x",
   "main": "index.js",
   "directories": {
     "lib": "lib",
@@ -14,14 +14,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Metalink-App/exw3.git"
+    "url": "git+https://github.com/Metalink-App/web3x.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Metalink-App/exw3/issues"
+    "url": "https://github.com/Metalink-App/web3x/issues"
   },
-  "homepage": "https://github.com/Metalink-App/exw3#readme",
+  "homepage": "https://github.com/Metalink-App/web3x#readme",
   "dependencies": {
     "@openzeppelin/contracts": "^4.3.2",
     "save-dev": "^0.0.1-security"
