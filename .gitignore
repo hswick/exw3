@@ -7,3 +7,4 @@ erl_crash.dump
 /doc
 passfile
 docker/openethereum
+.env*
