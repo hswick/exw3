@@ -3,7 +3,10 @@ defmodule ExW3.DynamoContract do
   Dynamically creates modules for ABIs at compile time.
   """
 
-  @eth_module Application.compile_env(:exw3, :rpc_client, Ethereumex.HttpClient)
+  @eth_module Application.compile_env(:exw3, :rpc_client, ExW3.Rpc)
+
+  @doc "Gaurd for validating the response for eth_call"
+  defguard valid_result(bin) when byte_size(bin) > 2
 
   @doc """
   Generate module for a given abi. The ABI can either be a json file path
@@ -49,9 +52,15 @@ defmodule ExW3.DynamoContract do
       |> Enum.into(params)
       |> Map.drop([:selector])
 
-    with {:ok, resp} <- unquote(@eth_module).eth_call(params),
+    with {:ok, resp} when valid_result(resp) <- unquote(@eth_module).eth_call([params]),
          {:ok, resp_bin} <- decode16(resp) do
       {:ok, ABI.decode(selector, resp_bin, :output)}
+    else
+      {:ok, "0x"} ->
+        {:error, :unknown}
+
+      {:error, cause} ->
+        {:error, cause}
     end
   end
 
@@ -70,9 +79,15 @@ defmodule ExW3.DynamoContract do
       |> Enum.into(params)
       |> Map.drop([:selector])
 
-    with {:ok, resp} <- unquote(@eth_module).eth_send_transaction(params),
-         {:ok, resp_bin} <- decode16(resp) do
-      {:ok, resp_bin}
+    with {:ok, resp} when valid_result(resp) <- unquote(@eth_module).eth_call([params]),
+         {:ok, tx} <- unquote(@eth_module).eth_send([params]) do
+      {:ok, tx}
+    else
+      {:ok, "0x"} ->
+        {:error, :unknown}
+
+      {:error, cause} ->
+        {:error, cause}
     end
   end
 
@@ -81,9 +96,9 @@ defmodule ExW3.DynamoContract do
   def encode16(bin), do: "0x" <> Base.encode16(bin, case: :lower)
 
   @spec encode16(String.t()) :: {:ok, binary}
-  defp decode16(<<"0x", encoded::binary>>), do: decode16(encoded)
-  defp decode16(encoded) when rem(byte_size(encoded), 2) == 1, do: decode16("0" <> encoded)
-  defp decode16(encoded), do: Base.decode16(encoded, case: :mixed)
+  def decode16(<<"0x", encoded::binary>>), do: decode16(encoded)
+  def decode16(encoded) when rem(byte_size(encoded), 2) == 1, do: decode16("0" <> encoded)
+  def decode16(encoded), do: Base.decode16(encoded, case: :mixed)
 
   @spec generate_method(ABI.FunctionSelector.t(), atom()) :: any()
   defp generate_method(selector, mod) do
