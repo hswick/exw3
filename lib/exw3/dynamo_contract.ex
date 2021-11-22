@@ -76,12 +76,16 @@ defmodule ExW3.DynamoContract do
     end
   end
 
+  @doc false
+  @spec encode16(binary()) :: String.t()
   def encode16(bin), do: "0x" <> Base.encode16(bin, case: :lower)
 
+  @spec encode16(String.t()) :: {:ok, binary}
   defp decode16(<<"0x", encoded::binary>>), do: decode16(encoded)
   defp decode16(encoded) when rem(byte_size(encoded), 2) == 1, do: decode16("0" <> encoded)
   defp decode16(encoded), do: Base.decode16(encoded, case: :mixed)
 
+  @spec generate_method(ABI.FunctionSelector.t(), atom()) :: any()
   defp generate_method(selector, mod) do
     name =
       selector.function
@@ -108,6 +112,7 @@ defmodule ExW3.DynamoContract do
     end
   end
 
+  @spec generate_delegates() :: any()
   defp generate_delegates do
     quote do
       defdelegate call(params, overrides \\ []), to: ExW3.DynamoContract
