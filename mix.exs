@@ -11,6 +11,7 @@ defmodule ExW3.MixProject do
       elixir: "~> 1.10",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
       docs: docs(),
       package: package(),
@@ -64,4 +65,8 @@ defmodule ExW3.MixProject do
       formatters: ["html"]
     ]
   end
+
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end
