@@ -18,16 +18,18 @@ defmodule ExW3Test do
 
   # Only works with ganache-cli
 
-  # test "mines a block" do
-  #   block_number = ExW3.block_number()
-  #   ExW3.mine()
-  #   assert ExW3.block_number() == block_number + 1
-  # end
+  #  test "mines a block" do
+  #    {:ok, block_number} = ExW3.block_number()
+  #    ExW3.mine()
+  #    {:ok, block_number2} = ExW3.block_number()
+  #    assert block_number2== block_number + 1
+  #  end
 
   # test "mines multiple blocks" do
-  #   block_number = ExW3.block_number()
+  #   {:ok, block_number} = ExW3.block_number()
   #   ExW3.mine(5)
-  #   assert ExW3.block_number() == block_number + 5
+  #   {:ok, block_number2} = ExW3.block_number()
+  #   assert block_number2== block_number + 5
   # end
 
   test "starts a Contract GenServer for simple storage contract", context do
