@@ -11,6 +11,7 @@ defmodule ExW3Test do
       event_tester_abi: ExW3.Abi.load_abi("test/examples/build/EventTester.abi"),
       complex_abi: ExW3.Abi.load_abi("test/examples/build/Complex.abi"),
       address_tester_abi: ExW3.Abi.load_abi("test/examples/build/AddressTester.abi"),
+      struct_tester_abi: ExW3.Abi.load_abi("test/examples/build/StructTester.abi"),
       accounts: ExW3.accounts()
     }
   end
@@ -87,6 +88,28 @@ defmodule ExW3Test do
     {:ok, result} = ExW3.Contract.call(:ArrayTester, :dynamicUint, [arr])
 
     assert result == arr
+  end
+
+  test "starts a Contract GenServer for struct tester contract", context do
+    ExW3.Contract.register(:StructTester, abi: context[:struct_tester_abi])
+
+    {:ok, address, _} =
+      ExW3.Contract.deploy(
+        :StructTester,
+        bin: ExW3.Abi.load_bin("test/examples/build/StructTester.bin"),
+        options: %{
+          gas: 300_000,
+          from: Enum.at(context[:accounts], 0)
+        }
+      )
+
+    ExW3.Contract.at(:StructTester, address)
+
+    assert address == ExW3.Contract.address(:StructTester)
+
+    {:ok, result} = ExW3.Contract.call(:StructTester, :getItems)
+
+    assert result == [{4, 1}, {8, 2}]
   end
 
   test "starts a Contract GenServer for event tester contract", context do

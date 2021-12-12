@@ -1,0 +1,1 @@
+[{"inputs":[],"name":"getItems","outputs":[{"components":[{"internalType":"uint256","name":"price","type":"uint256"},{"internalType":"uint256","name":"itemId","type":"uint256"}],"internalType":"struct StructTester.Item[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function"}]
