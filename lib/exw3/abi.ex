@@ -35,7 +35,10 @@ defmodule ExW3.Abi do
   def decode_data(types_signature, data) do
     {:ok, trim_data} = String.slice(data, 2..String.length(data)) |> Base.decode16(case: :lower)
 
-    ABI.decode(types_signature, trim_data) |> List.first()
+    types = ABI.FunctionSelector.decode_raw(types_signature)
+
+    ABI.TypeDecoder.decode_raw(trim_data, types)
+    |> List.first
   end
 
   @doc "Decodes output based on specified functions return signature"
@@ -44,47 +47,30 @@ defmodule ExW3.Abi do
     {:ok, trim_output} =
       String.slice(output, 2..String.length(output)) |> Base.decode16(case: :lower)
 
-    output_types = Enum.map(abi[name]["outputs"], fn x -> x["type"] end)
-    types_signature = Enum.join(["(", Enum.join(output_types, ","), ")"])
-    output_signature = "#{name}(#{types_signature})"
+    output_signature = function_selector(abi, name)
 
-    outputs =
-      ABI.decode(output_signature, trim_output)
-      |> List.first()
-      |> Tuple.to_list()
-
-    outputs
+    ABI.decode(output_signature, trim_output, :output)
   end
 
-  @doc "Returns the type signature of a given function"
-  @spec types_signature(map(), binary()) :: binary()
-  def types_signature(abi, name) do
-    input_types = Enum.map(abi[name]["inputs"], fn x -> x["type"] end)
-    types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
-    types_signature
+  @doc "Returns the ABI function selector by name"
+  @spec function_selector(map(), binary()) :: map()
+  def function_selector(abi, name) do
+    abi
+    |> Map.values
+    |> ABI.parse_specification
+    |> Enum.find(&(&1.function == name))
   end
 
-  @doc "Returns the 4 character method id based on the hash of the method signature"
-  @spec method_signature(map(), binary()) :: binary()
-  def method_signature(abi, name) do
-    if abi[name] do
-      input_signature = ExKeccak.hash_256("#{name}#{types_signature(abi, name)}")
-
-      # Take first four bytes
-      <<init::binary-size(4), _rest::binary>> = input_signature
-      init
-    else
-      raise "#{name} method not found in the given abi"
-    end
-  end
-
-  @doc "Encodes data into Ethereum hex string based on types signature"
+  @doc "Encodes data into Ethereum hex string"
   @spec encode_data(binary(), list()) :: binary()
-  def encode_data(types_signature, data) do
-    ABI.TypeEncoder.encode_raw(
-      [List.to_tuple(data)],
-      ABI.FunctionSelector.decode_raw(types_signature)
-    )
+  def encode_data(signature_type, data) when is_binary(signature_type) do
+    function_selector_type = signature_type |> ABI.FunctionSelector.decode_raw
+    ABI.TypeEncoder.encode_raw(data, function_selector_type)
+  end
+
+  @spec encode_data(map(), list()) :: binary()
+  def encode_data(function_selector, data) do
+    ABI.TypeEncoder.encode_raw(data, function_selector.types)
   end
 
   @doc "Encodes list of options and returns them as a map"
@@ -117,9 +103,8 @@ defmodule ExW3.Abi do
   @doc "Encodes data and appends it to the encoded method id"
   @spec encode_method_call(map(), binary(), list()) :: binary()
   def encode_method_call(abi, name, input) do
-    encoded_method_call =
-      method_signature(abi, name) <> encode_data(types_signature(abi, name), input)
-
+    selector = function_selector(abi, name)
+    encoded_method_call = selector.method_id <> encode_data(selector, input)
     encoded_method_call |> Base.encode16(case: :lower)
   end
 

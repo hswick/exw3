@@ -85,7 +85,7 @@ defmodule ExW3.Contract do
   defp topic_types_helper(fields) do
     if length(fields) > 0 do
       Enum.map(fields, fn field ->
-        "(#{field["type"]})"
+        "#{field["type"]}"
       end)
     else
       []
@@ -163,7 +163,7 @@ defmodule ExW3.Contract do
         if constructor_abi do
           {_, constructor} = constructor_abi
           input_types = Enum.map(constructor["inputs"], fn x -> x["type"] end)
-          types_signature = Enum.join(["(", Enum.join(input_types, ","), ")"])
+          types_signature = Enum.join([Enum.join(input_types, ",")])
 
           arg_count = Enum.count(arguments)
           input_types_count = Enum.count(input_types)
@@ -320,7 +320,7 @@ defmodule ExW3.Contract do
         if Enum.member?(["latest", "earliest", "pending"], event_data[:fromBlock]) do
           event_data[:fromBlock]
         else
-          ExW3.Abi.encode_data("(uint256)", [event_data[:fromBlock]])
+          ExW3.Abi.encode_data("uint256", [event_data[:fromBlock]])
         end
 
       Map.put(event_data, :fromBlock, new_from_block)
@@ -336,7 +336,7 @@ defmodule ExW3.Contract do
           event_data[key]
         else
           "0x" <>
-            (ExW3.Abi.encode_data("(uint256)", [event_data[key]])
+            (ExW3.Abi.encode_data("uint256", [event_data[key]])
              |> Base.encode16(case: :lower))
         end
 
@@ -379,7 +379,7 @@ defmodule ExW3.Contract do
             topic_type = Enum.at(event_attributes[:topic_types], i)
             topic_data = Enum.at(tail, i)
 
-            {decoded} = ExW3.Abi.decode_data(topic_type, topic_data)
+            decoded = ExW3.Abi.decode_data(topic_type, topic_data)
 
             decoded
           end)
@@ -534,7 +534,7 @@ defmodule ExW3.Contract do
                 topic_type = Enum.at(event_attributes[:topic_types], i)
                 topic_data = Enum.at(tail, i)
 
-                {decoded} = ExW3.Abi.decode_data(topic_type, topic_data)
+                decoded = ExW3.Abi.decode_data(topic_type, topic_data)
 
                 decoded
               end)
