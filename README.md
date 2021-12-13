@@ -1,13 +1,19 @@
 # ExW3
 
 [![Build Status](https://github.com/hswick/exw3/workflows/test/badge.svg?branch=master)](https://github.com/hswick/exw3/actions?query=workflow%3Atest)
-[![hex.pm version](https://img.shields.io/hexpm/v/exw3.svg?style=flat)](https://hex.pm/packages/exw3)
+[![Module Version](https://img.shields.io/hexpm/v/exw3.svg?style=flat)](https://hex.pm/packages/exw3)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg?style=flat)](https://hexdocs.pm/exw3/)
+[![Total Download](https://img.shields.io/hexpm/dt/exw3.svg?style=flat)](https://hex.pm/packages/exw3)
+[![License](https://img.shields.io/hexpm/l/exw3.svg?style=flat)](https://github.com/hswick/exw3/blob/master/LICENSE)
+[![Last Updated](https://img.shields.io/github/last-commit/hswick/exw3.svg?style=flat)](https://github.com/hswick/exw3/commits/master)
 
 <p align="center">
-  <img src="./exw3_logo.jpg"/>
+  <img src="./assets/exw3_logo.jpg"/>
 </p>
 
 ## Installation
+
+The package can be installed by adding `:exw3` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -16,6 +22,7 @@ def deps do
   ]
 end
 ```
+
 ## Overview
 
 ExW3 is a wrapper around ethereumex to provide a high level, user friendly json rpc api. This library is focused on providing a handy abstraction for working with smart contracts, and any other relevant utilities.
@@ -23,36 +30,39 @@ ExW3 is a wrapper around ethereumex to provide a high level, user friendly json 
 ## Usage
 
 Ensure you have an ethereum node to connect to at the specified url in your config. An easy local testnet to use is ganache-cli:
-```
-ganache-cli
+
+```bash
+$ ganache-cli
 ```
 
 Or you can use parity:
 Install Parity, then run it with
 
-```
-echo > passfile
+```bash
+$ echo > passfile
 parity --chain dev --unlock=0x00a329c0648769a73afac7f9381e08fb43dbea72 --reseal-min-period 0 --password passfile
 ```
 
 If Parity complains about password or missing account, try
 
-```
-parity --chain dev --unlock=0x00a329c0648769a73afac7f9381e08fb43dbea72
+```bash
+$ parity --chain dev --unlock=0x00a329c0648769a73afac7f9381e08fb43dbea72
 ```
 
-### Http
+### HTTP
 
 To use Ethereumex's HttpClient simply set your config like this:
+
 ```elixir
 config :ethereumex,
   client_type: :http,
   url: "http://localhost:8545"
 ```
 
-### Ipc
+### IPC
 
 If you want to use IpcClient set your config to something like this:
+
 ```elixir
 config :ethereumex,
   client_type: :ipc,
@@ -61,9 +71,9 @@ config :ethereumex,
 
 Provide an absolute path to the ipc socket provided by whatever Ethereum client you are running. You don't need to include the home directory, as that will be prepended to the path provided.
 
-* NOTE : Use of Ipc is recommended, as it is more secure and significantly faster.
+**NOTE:** Use of IPC is recommended, as it is more secure and significantly faster.
 
-Currently, ExW3 supports a handful of json rpc commands. Primarily the ones that get used the most. If ExW3 doesn't provide a specific command, you can always use the [Ethereumex](https://github.com/exthereum/ethereumex) commands.
+Currently, ExW3 supports a handful of JSON RPC commands. Primarily the ones that get used the most. If ExW3 doesn't provide a specific command, you can always use the [Ethereumex](https://github.com/exthereum/ethereumex) commands.
 
 Check out the [documentation](https://hexdocs.pm/exw3/ExW3.html) for more details of the API.
 
@@ -116,7 +126,8 @@ iex(11)> ExW3.Contract.call(:SimpleStorage, :get)
 
 ## Address Type
 
-If you are familiar with web3.js you may find the way ExW3 handles addresses unintuitive. ExW3's abi encoder interprets the address type as an uint160. If you are using an address as an option to a transaction like `:from` or `:to` this will work as expected. However, if one of your smart contracts is expecting an address type for an input parameter then you will need to do this:
+If you are familiar with web3.js you may find the way ExW3 handles addresses unintuitive. ExW3's ABI encoder interprets the address type as an uint160. If you are using an address as an option to a transaction like `:from` or `:to` this will work as expected. However, if one of your smart contracts is expecting an address type for an input parameter then you will need to do this:
+
 ```elixir
 a = ExW3.Utils.hex_to_integer("0x88838e84a401a1d6162290a1a765507c4a83f5e050658a83992a912f42149ca5")
 ```
@@ -141,6 +152,7 @@ ExW3.Contract.uninstall_filter(filter_id)
 Ethereum allows a user to add topics to filters. This means the filter will only return events with the specific index parameters. For all of the extra options see [here](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_newfilter)
 
 If you have written your event in Solidity like this:
+
 ```
 event SimpleIndex(uint256 indexed num, bytes32 indexed data, uint256 otherNum);
 ```
@@ -191,8 +203,9 @@ end
 # Compiling Solidity
 
 To compile the test solidity contracts after making a change run this command:
-```
-solc --abi --bin --overwrite -o test/examples/build test/examples/contracts/*.sol
+
+```bash
+$ solc --abi --bin --overwrite -o test/examples/build test/examples/contracts/*.sol
 ```
 
 # Contributing
@@ -206,6 +219,16 @@ $ docker-compose up
 $ mix test
 ```
 
-## License
+## Copyright and License
 
-`exw3` is released under the [Apache 2.0 license](./LICENSE.md)
+Copyright (c) 2018 Harley Swick
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at [https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

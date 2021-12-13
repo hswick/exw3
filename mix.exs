@@ -1,20 +1,26 @@
 defmodule ExW3.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/hswick/exw3"
+  @version "0.6.1"
+
   def project do
     [
       app: :exw3,
-      version: "0.6.1",
+      version: @version,
       elixir: "~> 1.10",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      description: description(),
+      docs: docs(),
       package: package(),
       name: "exw3",
-      source_url: "https://github.com/hswick/exw3",
       dialyzer: [
         remove_defaults: [:unknown]
+      ],
+      preferred_cli_env: [
+        docs: :docs,
+        "hex.publish": :docs
       ]
     ]
   end
@@ -25,7 +31,7 @@ defmodule ExW3.MixProject do
 
   defp deps do
     [
-      {:ex_doc, ">= 0.0.0", only: :dev},
+      {:ex_doc, ">= 0.0.0", only: :docs, runtime: false},
       {:ethereumex, "~> 0.7.0"},
       {:ex_keccak, "~> 0.2"},
       {:ex_abi, "~> 0.5.4"},
@@ -34,17 +40,28 @@ defmodule ExW3.MixProject do
     ]
   end
 
-  defp description do
-    "A high level Ethereum JSON RPC Client for Elixir"
-  end
-
   defp package do
     [
       name: "exw3",
-      files: ["lib", "mix.exs", "README*"],
+      description: "A high level Ethereum JSON RPC Client for Elixir",
+      files: ["lib", "mix.exs", "README*", "LICENSE*"],
       maintainers: ["Harley Swick"],
-      licenses: ["Apache 2.0"],
-      links: %{"GitHub" => "https://github.com/hswick/exw3"}
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => @source_url}
+    ]
+  end
+
+  defp docs do
+    [
+      extras: [
+        LICENSE: [title: "License"],
+        "README.md": [title: "Overview"]
+      ],
+      main: "readme",
+      assets: "assets",
+      source_url: @source_url,
+      source_ref: "v#{@version}",
+      formatters: ["html"]
     ]
   end
 end
