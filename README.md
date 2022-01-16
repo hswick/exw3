@@ -124,6 +124,26 @@ iex(11)> ExW3.Contract.call(:SimpleStorage, :get)
 {:ok, 1}
 ```
 
+### Using DynamoContract
+
+Using this method you can create an Elixir module mimicking the web3 contract.
+
+```elixir
+iex(12)> ExW3.DynamoContract.generate_module(SimpleStorage, "test/examples/build/SimpleStorage.abi")
+{:module, SimpleStorage,
+ <<70, 79, 82, 49, 0, 0, 10, 184, 66, 69, 65, 77, 65, 116, 85, 56, 0, 0, 0, 225,
+   0, 0, 0, 23, 20, 69, 108, 105, 120, 105, 114, 46, 83, 105, 109, 112, 108,
+   101, 83, 116, 111, 114, 97, 103, 101, 8, 95, ...>>,
+ [[send: 2], {:set, 1}, {:get, 0}]}
+
+iex(13)> SimpleStorage.get() |> SimpleStorage.call(to: address)
+{:ok, [0]}
+iex(14)> SimpleStorage.set(1) |> SimpleStorage.send(to: address, from: Enum.at(accounts, 0))
+{:ok, tx_hash}
+iex(15)> SimpleStorage.get() |> SimpleStorage.call(to: address)
+{:ok, [1]}
+```
+
 ## Address Type
 
 If you are familiar with web3.js you may find the way ExW3 handles addresses unintuitive. ExW3's ABI encoder interprets the address type as an uint160. If you are using an address as an option to a transaction like `:from` or `:to` this will work as expected. However, if one of your smart contracts is expecting an address type for an input parameter then you will need to do this:
