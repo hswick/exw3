@@ -33,8 +33,8 @@ defmodule ExW3.MixProject do
     [
       {:ex_doc, ">= 0.0.0", only: :docs, runtime: false},
       {:ethereumex, "~> 0.7.0"},
-      {:ex_keccak, "~> 0.2"},
-      {:ex_abi, "~> 0.5.4"},
+      {:ex_keccak, "~> 0.3", override: true},
+      {:ex_abi, "~> 0.5.9"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:jason, "~> 1.2"}
     ]
