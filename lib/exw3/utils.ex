@@ -1,4 +1,6 @@
 defmodule ExW3.Utils do
+  alias ExW3.Address
+
   @type invalid_hex_string :: :invalid_hex_string
   @type negative_integer :: :negative_integer
   @type non_integer :: :non_integer
@@ -86,39 +88,20 @@ defmodule ExW3.Utils do
     end
   end
 
+  @deprecated "Use ExW3.Address.to_checksum/1 instead."
   @doc "Returns a checksummed address conforming to EIP-55"
   @spec to_checksum_address(String.t()) :: String.t()
   def to_checksum_address(address) do
-    address = address |> String.downcase() |> String.replace(~r/^0x/, "")
-    hash_bin = ExKeccak.hash_256(address)
-
-    hash =
-      hash_bin
-      |> Base.encode16(case: :lower)
-      |> String.replace(~r/^0x/, "")
-
-    keccak_hash_list =
-      hash
-      |> String.split("", trim: true)
-      |> Enum.map(fn x -> elem(Integer.parse(x, 16), 0) end)
-
-    list_arr =
-      for n <- 0..(String.length(address) - 1) do
-        number = Enum.at(keccak_hash_list, n)
-
-        cond do
-          number >= 8 -> String.upcase(String.at(address, n))
-          true -> String.downcase(String.at(address, n))
-        end
-      end
-
-    "0x" <> List.to_string(list_arr)
+    address
+    |> Address.from_hex()
+    |> Address.to_checksum()
   end
 
+  @deprecated "Use ExW3.Address.is_valid_checksum?/1 instead."
   @doc "Checks if the address is a valid checksummed address"
   @spec is_valid_checksum_address(String.t()) :: boolean
   def is_valid_checksum_address(address) do
-    ExW3.Utils.to_checksum_address(address) == address
+    Address.is_valid_checksum?(address)
   end
 
   @doc "converts Ethereum style bytes to string"
@@ -139,9 +122,12 @@ defmodule ExW3.Utils do
     |> :binary.decode_unsigned()
   end
 
+  @deprecated "Use ExW3.Address.to_hex/1 instead."
   @doc "Converts bytes to Ethereum address"
   @spec to_address(binary()) :: binary()
   def to_address(bytes) do
-    Enum.join(["0x", bytes |> Base.encode16(case: :lower)], "")
+    bytes
+    |> Address.from_bytes()
+    |> Address.to_hex()
   end
 end
