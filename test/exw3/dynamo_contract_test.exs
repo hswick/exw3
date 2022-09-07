@@ -19,10 +19,20 @@ defmodule ExW3.DynamoContractTest do
       {:ok, address} = DynamoContract.decode16(@dummy_address)
 
       assert %{
+               data: "0xc2bc2efc000000000000000000000000100911110df37c9fb26829eb2cc623cd1bf50001",
                selector: %{
                  method_id: <<194, 188, 46, 252>>
                }
              } = AddressTester.get(address)
+
+      assert %{
+               data:
+                 <<194, 188, 46, 252, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 9, 17, 17, 13, 243,
+                   124, 159, 178, 104, 41, 235, 44, 198, 35, 205, 27, 245, 0, 1>>,
+               selector: %{
+                 method_id: <<194, 188, 46, 252>>
+               }
+             } = AddressTester.get(address, data_as: :binary)
     end
   end
 

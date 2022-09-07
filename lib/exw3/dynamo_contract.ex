@@ -113,11 +113,16 @@ defmodule ExW3.DynamoContract do
       |> Macro.generate_arguments(mod)
 
     quote do
-      def unquote(name)(unquote_splicing(func_args)) do
+      def unquote(name)(unquote_splicing(func_args), opts \\ []) do
         action_data =
           unquote(Macro.escape(selector))
           |> ABI.encode([unquote_splicing(func_args)])
-          |> ExW3.DynamoContract.encode16()
+          |> then(fn data ->
+            case Keyword.get(opts, :data_as, :hex) do
+              :binary -> data
+              :hex -> ExW3.DynamoContract.encode16(data)
+            end
+          end)
 
         %{
           data: action_data,
