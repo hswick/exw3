@@ -46,13 +46,15 @@ defmodule ExW3.DynamoContract do
       iex> ERC20.total_supply() |> DynamoContract.call(to: "0xa0b...ef6")
       {:ok, [100000000000000]}
   """
-  def call(%{data: _, selector: selector} = params, overrides \\ []) do
+  def call(%{data: _, selector: selector} = params, opts_and_overrides \\ []) do
+    {block, overrides} = Keyword.pop(opts_and_overrides, :block, "latest")
+
     params =
       overrides
       |> Enum.into(params)
       |> Map.drop([:selector])
 
-    with {:ok, resp} when valid_result(resp) <- unquote(@eth_module).eth_call([params]),
+    with {:ok, resp} when valid_result(resp) <- unquote(@eth_module).eth_call([params, block]),
          {:ok, resp_bin} <- decode16(resp) do
       {:ok, ABI.decode(selector, resp_bin, :output)}
     else
