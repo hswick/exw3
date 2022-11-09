@@ -44,16 +44,8 @@ defmodule ExW3.Abi do
     {:ok, trim_output} =
       String.slice(output, 2..String.length(output)) |> Base.decode16(case: :lower)
 
-    output_types = Enum.map(abi[name]["outputs"], fn x -> x["type"] end)
-    types_signature = Enum.join(["(", Enum.join(output_types, ","), ")"])
-    output_signature = "#{name}(#{types_signature})"
-
-    outputs =
-      ABI.decode(output_signature, trim_output)
-      |> List.first()
-      |> Tuple.to_list()
-
-    outputs
+    selector = ABI.FunctionSelector.parse_specification_item(abi[name])
+    ABI.decode(selector, trim_output, :output)
   end
 
   @doc "Returns the type signature of a given function"
