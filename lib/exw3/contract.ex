@@ -1,6 +1,12 @@
 defmodule ExW3.Contract do
   use GenServer
 
+  @log_integer_attrs [
+    "blockNumber",
+    "logIndex",
+    "transactionIndex"
+  ]
+
   @doc "Begins the Contract process to manage all interactions with smart contracts"
   @spec start_link() :: {:ok, pid()}
   def start_link(_ \\ :ok) do
@@ -70,6 +76,15 @@ defmodule ExW3.Contract do
     GenServer.call(
       ContractManager,
       {:get_filter_changes, filter_id}
+    )
+  end
+
+  @doc "Returns formatted event logs for a registered contract"
+  @spec get_logs(atom(), map()) :: {:ok, list()}
+  def get_logs(contract_name, event_data \\ %{}) do
+    GenServer.call(
+      ContractManager,
+      {:get_logs, contract_name, event_data}
     )
   end
 
@@ -169,9 +184,7 @@ defmodule ExW3.Contract do
           input_types_count = Enum.count(input_types)
 
           if input_types_count != arg_count do
-            raise "Number of provided arguments to constructor is incorrect. Was given #{
-                    arg_count
-                  } args, looking for #{input_types_count}."
+            raise "Number of provided arguments to constructor is incorrect. Was given #{arg_count} args, looking for #{input_types_count}."
           end
 
           bin <>
@@ -335,9 +348,10 @@ defmodule ExW3.Contract do
         if Enum.member?(["latest", "earliest", "pending"], event_data[key]) do
           event_data[key]
         else
-          "0x" <>
-            (ExW3.Abi.encode_data("(uint256)", [event_data[key]])
-             |> Base.encode16(case: :lower))
+          event_data[key]
+          |> Integer.to_string(16)
+          |> String.downcase()
+          |> String.replace_prefix("", "0x")
         end
 
       Map.put(event_data, key, new_param)
@@ -360,6 +374,10 @@ defmodule ExW3.Contract do
 
   defp extract_non_indexed_fields(data, names, signature) do
     Enum.zip(names, ExW3.Abi.decode_event(data, signature)) |> Enum.into(%{})
+  end
+
+  defp format_log_data(_log, event_attributes) when event_attributes == %{} do
+    %{}
   end
 
   defp format_log_data(log, event_attributes) do
@@ -392,6 +410,16 @@ defmodule ExW3.Contract do
     new_data = Map.merge(indexed_fields, non_indexed_fields)
 
     Map.put(log, "data", new_data)
+  end
+
+  defp format_log(log, event_attributes) do
+    Enum.reduce(
+      [
+        ExW3.Normalize.transform_to_integer(log, @log_integer_attrs),
+        format_log_data(log, event_attributes)
+      ],
+      &Map.merge/2
+    )
   end
 
   def handle_call({:filter, {contract_name, event_name, event_data}}, _from, state) do
@@ -428,29 +456,35 @@ defmodule ExW3.Contract do
     event_attributes =
       get_event_attributes(state, filter_info[:contract_name], filter_info[:event_name])
 
-    logs = ExW3.Rpc.get_filter_changes(filter_id)
+    formatted_logs =
+      filter_id
+      |> ExW3.Rpc.get_filter_changes()
+      |> Enum.map(&format_log(&1, event_attributes))
+
+    {:reply, {:ok, formatted_logs}, state}
+  end
+
+  def handle_call({:get_logs, contract_name, event_data}, _from, state) do
+    contract_info = state[contract_name]
+
+    {:ok, logs} =
+      event_data
+      |> Map.merge(%{address: contract_info[:address]})
+      |> event_data_format_helper()
+      |> ExW3.Rpc.get_logs()
 
     formatted_logs =
-      if logs != [] do
-        Enum.map(logs, fn log ->
-          formatted_log =
-            Enum.reduce(
-              [
-                ExW3.Normalize.transform_to_integer(log, [
-                  "blockNumber",
-                  "logIndex",
-                  "transactionIndex"
-                ]),
-                format_log_data(log, event_attributes)
-              ],
-              &Map.merge/2
-            )
+      logs
+      |> Enum.map(fn log ->
+        # Per definition:
+        # "The first topic usually consists of the signature (a keccak256 hash)
+        # of the name of the event that occurred."
+        # But just in case we use find
+        event_topic = log["topics"] |> Enum.find(fn t -> contract_info[:events][t] end)
+        event_attributes = contract_info[:events] |> Map.get(event_topic, %{})
 
-          formatted_log
-        end)
-      else
-        logs
-      end
+        log |> format_log(event_attributes)
+      end)
 
     {:reply, {:ok, formatted_logs}, state}
   end

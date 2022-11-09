@@ -400,7 +400,7 @@ defmodule ExW3Test do
              ExW3.Contract.send(:SimpleStorage, :set, [1], %{from: Enum.at(context[:accounts], 0)})
   end
 
-  test ".get_logs/1", context do
+  test "Rpc.get_logs/1", context do
     ExW3.Contract.register(:EventTester, abi: context[:event_tester_abi])
 
     {:ok, address, _} =
@@ -441,5 +441,108 @@ defmodule ExW3Test do
 
     log = Enum.at(logs, 0)
     assert log["transactionHash"] == simple_tx_hash
+  end
+
+  test "Testing formatted get logs", context do
+    ExW3.Contract.register(:EventTester, abi: context[:event_tester_abi])
+
+    {:ok, address, _} =
+      ExW3.Contract.deploy(
+        :EventTester,
+        bin: ExW3.Abi.load_bin("test/examples/build/EventTester.bin"),
+        options: %{
+          gas: 300_000,
+          from: Enum.at(context[:accounts], 0)
+        }
+      )
+
+    ExW3.Contract.at(:EventTester, address)
+
+    {:ok, block_number} = ExW3.block_number()
+
+    # Test non indexed events
+
+    {:ok, []} = ExW3.Contract.get_logs(:EventTester, %{fromBlock: block_number})
+
+    {:ok, _tx_hash} =
+      ExW3.Contract.send(
+        :EventTester,
+        :simple,
+        ["Hello, World!"],
+        %{from: Enum.at(context[:accounts], 0), gas: 30_000}
+      )
+
+    {:ok, [event_log]} = ExW3.Contract.get_logs(:EventTester, %{fromBlock: block_number})
+
+    assert event_log |> is_map
+    log_data = Map.get(event_log, "data")
+    assert log_data |> is_map
+    assert Map.get(log_data, "num") == 42
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+
+    # Test indexed events
+
+    {:ok, _tx_hash} =
+      ExW3.Contract.send(
+        :EventTester,
+        :simpleIndex,
+        ["Hello, World!"],
+        %{from: Enum.at(context[:accounts], 0), gas: 30_000}
+      )
+
+    {:ok, logs} = ExW3.Contract.get_logs(:EventTester, %{fromBlock: block_number})
+
+    event_log = logs |> List.last()
+
+    assert event_log |> is_map
+    log_data = Map.get(event_log, "data")
+    assert log_data |> is_map
+    assert Map.get(log_data, "num") == 46
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert Map.get(log_data, "otherNum") == 42
+
+    # # Test Indexing Indexed Events
+
+    {:ok, _tx_hash} =
+      ExW3.Contract.send(
+        :EventTester,
+        :simpleIndex,
+        ["Hello, World!"],
+        %{from: Enum.at(context[:accounts], 0), gas: 30_000}
+      )
+
+    {:ok, logs} = ExW3.Contract.get_logs(:EventTester, %{fromBlock: block_number})
+
+    event_log = logs |> List.last()
+    assert event_log |> is_map
+    log_data = Map.get(event_log, "data")
+    assert log_data |> is_map
+    assert Map.get(log_data, "num") == 46
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert Map.get(log_data, "otherNum") == 42
+
+    # Tests filter with map params
+
+    {:ok, _tx_hash} =
+      ExW3.Contract.send(
+        :EventTester,
+        :simpleIndex,
+        ["Hello, World!"],
+        %{from: Enum.at(context[:accounts], 0), gas: 30_000}
+      )
+
+    {:ok, logs} =
+      ExW3.Contract.get_logs(:EventTester, %{
+        fromBlock: block_number,
+        topics: %{num: 46, data: "Hello, World!"}
+      })
+
+    event_log = logs |> List.last()
+    assert event_log |> is_map
+    log_data = Map.get(event_log, "data")
+    assert log_data |> is_map
+    assert Map.get(log_data, "num") == 46
+    assert ExW3.Utils.bytes_to_string(Map.get(log_data, "data")) == "Hello, World!"
+    assert Map.get(log_data, "otherNum") == 42
   end
 end
