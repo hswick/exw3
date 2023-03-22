@@ -21,6 +21,13 @@ defmodule ExW3.Abi do
     end
   end
 
+  @spec load_abi_with_path(binary()) :: list() | {:error, atom()}
+  def load_abi_with_path(file_path) do
+    with {:ok, abi} <- File.read(file_path) do
+      reformat_abi(Jason.decode!(abi))
+    end
+  end
+
   @doc "Loads the bin ar the file path"
   @spec load_bin(binary()) :: binary()
   def load_bin(file_path) do
