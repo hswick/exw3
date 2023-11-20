@@ -83,7 +83,8 @@ defmodule ExW3.Abi do
   def encode_data(types_signature, data) do
     ABI.TypeEncoder.encode_raw(
       [List.to_tuple(data)],
-      ABI.FunctionSelector.decode_raw(types_signature)
+      ABI.FunctionSelector.decode_raw(types_signature),
+      :standard
     )
   end
 
@@ -138,7 +139,8 @@ defmodule ExW3.Abi do
         init <>
           ABI.TypeEncoder.encode_raw(
             [List.to_tuple(input)],
-            ABI.FunctionSelector.decode_raw(types_signature)
+            ABI.FunctionSelector.decode_raw(types_signature),
+            :standard
           )
 
       encoded_input |> Base.encode16(case: :lower)
