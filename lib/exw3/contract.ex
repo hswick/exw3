@@ -169,9 +169,7 @@ defmodule ExW3.Contract do
           input_types_count = Enum.count(input_types)
 
           if input_types_count != arg_count do
-            raise "Number of provided arguments to constructor is incorrect. Was given #{
-                    arg_count
-                  } args, looking for #{input_types_count}."
+            raise "Number of provided arguments to constructor is incorrect. Was given #{arg_count} args, looking for #{input_types_count}."
           end
 
           bin <>
@@ -314,30 +312,14 @@ defmodule ExW3.Contract do
     end
   end
 
-  def from_block_helper(event_data) do
-    if event_data[:fromBlock] do
-      new_from_block =
-        if Enum.member?(["latest", "earliest", "pending"], event_data[:fromBlock]) do
-          event_data[:fromBlock]
-        else
-          ExW3.Abi.encode_data("(uint256)", [event_data[:fromBlock]])
-        end
-
-      Map.put(event_data, :fromBlock, new_from_block)
-    else
-      event_data
-    end
-  end
-
   defp param_helper(event_data, key) do
     if event_data[key] do
       new_param =
-        if Enum.member?(["latest", "earliest", "pending"], event_data[key]) do
+        if Enum.member?(["latest", "earliest", "pending", "safe", "finalized"], event_data[key]) do
           event_data[key]
         else
-          "0x" <>
-            (ExW3.Abi.encode_data("(uint256)", [event_data[key]])
-             |> Base.encode16(case: :lower))
+          {:ok, hex} = ExW3.Utils.integer_to_hex(event_data[key])
+          hex
         end
 
       Map.put(event_data, key, new_param)

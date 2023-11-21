@@ -56,6 +56,7 @@ To use Ethereumex's HttpClient simply set your config like this:
 ```elixir
 config :ethereumex,
   client_type: :http,
+  http_headers: [{"content-type", "application/json"}],
   url: "http://localhost:8545"
 ```
 
@@ -66,6 +67,7 @@ If you want to use IpcClient set your config to something like this:
 ```elixir
 config :ethereumex,
   client_type: :ipc,
+  http_headers: [{"content-type", "application/json"}],
   ipc_path: "/.local/share/io.parity.ethereum/jsonrpc.ipc"
 ```
 

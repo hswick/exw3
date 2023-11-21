@@ -32,11 +32,12 @@ defmodule ExW3.MixProject do
   defp deps do
     [
       {:ex_doc, ">= 0.0.0", only: :docs, runtime: false},
-      {:ethereumex, "~> 0.7.0"},
-      {:ex_keccak, "~> 0.2"},
-      {:ex_abi, "~> 0.5.4"},
+      {:ethereumex, "~> 0.10.5"},
+      {:ex_keccak, "~> 0.7"},
+      {:ex_abi, "~> 0.6.4"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:jason, "~> 1.2"}
+      {:jason, "~> 1.4"},
+      {:ssl_verify_fun, "~> 1.1", manager: :rebar3, override: true}
     ]
   end
 

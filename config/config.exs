@@ -1,6 +1,6 @@
 # This file is responsible for configuring your application
 # and its dependencies with the aid of the Mix.Config module.
-use Mix.Config
+import Config
 
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this
@@ -26,6 +26,7 @@ use Mix.Config
 #     import_config "#{Mix.env}.exs"
 config :ethereumex,
   client_type: :ipc,
+  http_headers: [{"content-type", "application/json"}],
   url: "http://localhost:8545",
   ipc_path:
     System.get_env(
